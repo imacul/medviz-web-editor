@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="assets/medviz-logo.svg" alt="MedViz logo" width="96" />
 </p>
 
@@ -16,7 +16,18 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/Y-ifUgS4R30">▶ Watch MedViz Demo on YouTube</a>
+  <a href="https://youtu.be/Y-ifUgS4R30">Watch MedViz Demo on YouTube</a>
+</p>
+
+## Export Report Demo
+<p align="center">
+  <a href="https://youtu.be/rCmx7AW-bBw" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.youtube.com/vi/rCmx7AW-bBw/maxresdefault.jpg" alt="Watch Export Report feature demo on YouTube" width="100%" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/rCmx7AW-bBw">Watch Export Report Demo on YouTube</a>
 </p>
 
 ## Run
@@ -24,6 +35,18 @@
 npm install
 npm run dev
 ```
+
+## Tech Stack
+- React (Vite)
+- JavaScript (ES Modules)
+- Three.js (WebGL rendering)
+- HTML/CSS (custom clinic-focused UI)
+- Node.js + npm (development/build tooling)
+
+## Screenshots
+- Folder: [`screenshots/`](./screenshots/)
+- This folder contains UI and viewport captures for the project.
+- More screenshots will be added here as development continues.
 
 ## Implemented Scope (v1 progress)
 - STL/OBJ/PLY import with metadata extraction (name, format, triangles, vertices, file size, bbox)
