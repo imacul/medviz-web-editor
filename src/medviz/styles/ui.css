@@ -1,0 +1,30 @@
+.scene-tabs {
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scene-tabs::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.topbar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.topbar-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.invisible-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.invisible-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
