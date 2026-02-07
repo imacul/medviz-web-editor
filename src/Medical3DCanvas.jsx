@@ -1349,6 +1349,30 @@ const Medical3DCanvas = () => {
         modelMeta={modelMeta}
       />
 
+      <div
+        style={{
+          position: 'absolute',
+          right: '14px',
+          bottom: '52px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '7px 10px',
+          borderRadius: '999px',
+          background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.86)' : 'rgba(16, 20, 33, 0.78)',
+          border: `1px solid ${activeTheme === 1 ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)'}`,
+          color: activeTheme === 1 ? '#1f2a3a' : '#d8deec',
+          fontSize: '11px',
+          fontWeight: 700,
+          letterSpacing: '0.25px',
+          zIndex: 115,
+          pointerEvents: 'none'
+        }}
+      >
+        <img src={medvizLogo} alt="MedViz" style={{ width: '15px', height: '15px', objectFit: 'contain', opacity: 0.95 }} />
+        <span>MedViz Web Editor</span>
+      </div>
+
       <StatusBar activeTheme={activeTheme} sceneName={sceneNames[activeScene]} activeTool={activeTool} fps={fps} />
       <ToastStack toasts={toasts} />
     </div>

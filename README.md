@@ -1,6 +1,17 @@
-# MedViz Web Editor
+<p align="center">
+  <img src="assets/medviz-logo.svg" alt="MedViz logo" width="96" />
+</p>
 
-Web-based 3D medical mesh viewer and light clinical editor for fast clinic review.
+<h1 align="center">MedViz Web Editor</h1>
+
+<p align="center">
+  Web-based 3D medical mesh viewer and light clinical editor for fast clinical review.
+</p>
+
+## Demo Video
+<video controls width="100%" src="assets/MedViz%203D.mp4">
+  Your browser does not support the video tag.
+</video>
 
 ## Run
 ```bash

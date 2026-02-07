@@ -89,8 +89,13 @@ const TopBar = ({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-        <img src={medvizLogo} alt="MedViz logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-        <div style={{ fontSize: '18px', fontWeight: 800, color: palette.text, letterSpacing: '0.3px' }}>MedViz</div>
+        <img src={medvizLogo} alt="MedViz logo" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: palette.text, letterSpacing: '0.3px' }}>MedViz</div>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: theme.accent, letterSpacing: '0.35px', textTransform: 'uppercase' }}>
+            Clinical Web Editor
+          </div>
+        </div>
       </div>
 
       <div className="topbar-scroll" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflowX: 'auto' }}>
