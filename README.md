@@ -9,9 +9,17 @@
 </p>
 
 ## Demo Video
-<video controls width="100%" src="assets/MedViz%203D.mp4">
+<video
+  src="https://raw.githubusercontent.com/imacul/medviz-web-editor/main/assets/MedViz%203D.mp4"
+  controls
+  muted
+  playsinline
+  width="100%"
+>
   Your browser does not support the video tag.
 </video>
+
+If the inline player does not render, use the direct link: [Watch the MedViz demo video](./assets/MedViz%203D.mp4).
 
 ## Run
 ```bash
