@@ -1,5 +1,14 @@
 import { getPanelStyle, getToolButtonStyle, getUiPalette } from './styles';
 
+const TOOL_DISPLAY_NAMES = {
+  measure: 'Measure',
+  segment: 'Highlight',
+  slice: 'Slice',
+  annotate: 'Annotate',
+  trim: 'Trim',
+  transform: 'Reposition',
+};
+
 const ToolsPanel = ({
   show,
   activeTheme,
@@ -14,7 +23,8 @@ const ToolsPanel = ({
   onExportStl,
   onExportObj,
   onExportPng,
-  onExportReport,
+  onExportReportHtml,
+  onExportReportPdf,
   includeOverlaysInScreenshot,
   setIncludeOverlaysInScreenshot,
   activeScene,
@@ -73,7 +83,9 @@ const ToolsPanel = ({
   onUndoTrim,
   onRedoTrim,
   trimHistoryDepth,
-  trimRedoDepth
+  trimRedoDepth,
+  isMobile = false,
+  isTablet = false
 }) => {
   if (!show) return null;
   const palette = getUiPalette(activeTheme, theme);
@@ -82,11 +94,11 @@ const ToolsPanel = ({
     <div
       className="invisible-scrollbar"
       style={{
-        ...getPanelStyle(activeTheme, '80px', 'left'),
+        ...getPanelStyle(activeTheme, '80px', 'left', { isMobile, isTablet }),
         background: palette.panelBg,
         backdropFilter: 'blur(10px)',
         border: `1px solid ${palette.border}`,
-        maxHeight: '75vh',
+        maxHeight: isMobile ? '52vh' : '75vh',
         overflow: 'auto'
       }}
     >
@@ -100,7 +112,7 @@ const ToolsPanel = ({
       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
         {['measure', 'segment', 'slice', 'annotate', 'trim', 'transform'].map((tool) => (
           <button key={tool} onClick={() => setActiveTool(tool)} style={getToolButtonStyle(activeTool === tool, palette)}>
-            {tool}
+            {TOOL_DISPLAY_NAMES[tool]}
           </button>
         ))}
       </div>
@@ -168,7 +180,7 @@ const ToolsPanel = ({
       </div>
 
       <div style={{ borderTop: `1px solid ${palette.border}`, paddingTop: '10px', marginTop: '10px' }}>
-        <div style={{ color: palette.text, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Export</div>
+        <div style={{ color: palette.text, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Model Export</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
           <button
             onClick={hasImportedModel ? onExportStl : undefined}
@@ -185,8 +197,17 @@ const ToolsPanel = ({
           <button onClick={onExportPng} style={getToolButtonStyle(false, palette)}>
             Screenshot PNG
           </button>
-          <button onClick={onExportReport} style={getToolButtonStyle(false, palette)}>
-            Export Report
+        </div>
+      </div>
+
+      <div style={{ borderTop: `1px solid ${palette.border}`, paddingTop: '10px', marginTop: '10px' }}>
+        <div style={{ color: palette.text, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Report Export</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          <button onClick={onExportReportHtml} style={getToolButtonStyle(false, palette)}>
+            Report HTML
+          </button>
+          <button onClick={onExportReportPdf} style={getToolButtonStyle(false, palette)}>
+            Report PDF
           </button>
         </div>
       </div>
@@ -251,7 +272,7 @@ const ToolsPanel = ({
           {activeScene === 4 && hasImportedModel ? (
             <>
               <div style={{ color: palette.text, fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                Segmentation Brush
+                Highlight Brush
               </div>
               <div style={{ color: palette.muted, fontSize: '12px', marginBottom: '8px' }}>
                 Click or drag to paint surface zones. Use Base to erase.
@@ -297,7 +318,7 @@ const ToolsPanel = ({
                   {segmentOffsetPreviewActive ? 'Shell ON' : 'Shell OFF'}
                 </button>
                 <button onClick={onClearSegmentation} style={getToolButtonStyle(false, palette)}>
-                  Clear Segmentation
+                  Clear Highlights
                 </button>
               </div>
 
@@ -367,7 +388,7 @@ const ToolsPanel = ({
               </div>
             </>
           ) : (
-            <div style={{ color: palette.muted, fontSize: '12px' }}>Import STL/OBJ/PLY to use segmentation painting.</div>
+            <div style={{ color: palette.muted, fontSize: '12px' }}>Import a model to use the Highlight tool.</div>
           )}
         </div>
       )}
@@ -497,7 +518,7 @@ const ToolsPanel = ({
               </button>
             </>
           ) : (
-            <div style={{ color: palette.muted, fontSize: '12px' }}>Import STL/OBJ/PLY to use transform tools.</div>
+            <div style={{ color: palette.muted, fontSize: '12px' }}>Import a model to use the Reposition tool.</div>
           )}
         </div>
       )}

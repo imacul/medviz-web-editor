@@ -25,11 +25,15 @@ const TopBar = ({
   setShowToolsPanel,
   onImportClick,
   isImporting,
+  readOnly = false,
   onExportStl,
   onExportObj,
   onExportPng,
-  onExportReport,
-  onGoHome
+  onExportReportHtml,
+  onExportReportPdf,
+  onGoHome,
+  isCompact = false,
+  showSceneSelector = true
 }) => {
   const palette = getUiPalette(activeTheme, theme);
   const [openMenu, setOpenMenu] = useState(null);
@@ -75,7 +79,7 @@ const TopBar = ({
         top: 0,
         left: 0,
         right: 0,
-        height: '64px',
+        minHeight: isCompact ? '108px' : '64px',
         background:
           activeTheme === 1
             ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.88) 100%)'
@@ -84,42 +88,90 @@ const TopBar = ({
         borderBottom: `1px solid ${palette.border}`,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '0 12px',
+        flexWrap: isCompact ? 'wrap' : 'nowrap',
+        gap: isCompact ? '8px' : '10px',
+        padding: isCompact
+          ? 'calc(10px + env(safe-area-inset-top, 0px)) 12px 10px'
+          : '0 12px',
         zIndex: 300
       }}
     >
       <div
         onClick={onGoHome}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', cursor: onGoHome ? 'pointer' : 'default' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          whiteSpace: 'nowrap',
+          cursor: onGoHome ? 'pointer' : 'default',
+          minWidth: isCompact ? 0 : 'auto',
+          flex: isCompact ? '1 1 auto' : '0 0 auto'
+        }}
         title="Back to home"
       >
-        <img src={medvizLogo} alt="MedViz logo" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
+        <img
+          src={medvizLogo}
+          alt="MedViz logo"
+          style={{ width: isCompact ? '28px' : '30px', height: isCompact ? '28px' : '30px', objectFit: 'contain' }}
+        />
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: palette.text, letterSpacing: '0.3px' }}>MedViz</div>
+          <div style={{ fontSize: isCompact ? '16px' : '18px', fontWeight: 800, color: palette.text, letterSpacing: '0.3px' }}>MedViz</div>
           <div style={{ fontSize: '10px', fontWeight: 700, color: theme.accent, letterSpacing: '0.35px', textTransform: 'uppercase' }}>
-            Clinical Web Editor
+            Clinical Review
           </div>
         </div>
       </div>
 
-      <div className="topbar-scroll" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflowX: 'auto' }}>
-        <select
-          value={activeScene}
-          onChange={(e) => onSelectScene(parseInt(e.target.value, 10))}
-          style={{ ...compactSelectStyle(palette), minWidth: '138px' }}
-        >
-          {sceneNames.map((name, index) => (
-            <option key={name} value={index} disabled={index === 4 && !hasImportedModel}>
+      <button
+        onClick={readOnly ? undefined : onImportClick}
+        disabled={isImporting || readOnly}
+        style={{
+          padding: isCompact ? '8px 11px' : '8px 12px',
+          backgroundColor: readOnly ? 'rgba(255,255,255,0.12)' : theme.accent,
+          color: readOnly ? 'rgba(255,255,255,0.35)' : '#ffffff',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '12px',
+          fontWeight: 700,
+          cursor: (isImporting || readOnly) ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
+          flex: '0 0 auto'
+        }}
+        title={readOnly ? 'View only — you cannot import models' : undefined}
+      >
+        {isImporting ? 'Adding...' : 'Import Model'}
+      </button>
+
+      <div
+        className="topbar-scroll"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flex: isCompact ? '1 1 100%' : 1,
+          overflowX: 'auto',
+          order: isCompact ? 3 : 0,
+          paddingBottom: isCompact ? '2px' : 0
+        }}
+      >
+        {showSceneSelector ? (
+          <select
+            value={activeScene}
+            onChange={(e) => onSelectScene(parseInt(e.target.value, 10))}
+            style={{ ...compactSelectStyle(palette), minWidth: isCompact ? '124px' : '138px' }}
+          >
+            {sceneNames.map((name, index) => (
+              <option key={name} value={index} disabled={index === 4 && !hasImportedModel}>
               {name}
             </option>
           ))}
-        </select>
+          </select>
+        ) : null}
 
         <select
           value={activeTheme}
           onChange={(e) => onThemeChange(parseInt(e.target.value, 10))}
-          style={{ ...compactSelectStyle(palette), minWidth: '132px' }}
+          style={{ ...compactSelectStyle(palette), minWidth: isCompact ? '118px' : '132px' }}
         >
           {themes.map((t, index) => (
             <option key={index} value={index}>
@@ -133,77 +185,103 @@ const TopBar = ({
         </button>
       </div>
 
-      <div ref={menuRef} style={{ position: 'relative', display: 'inline-flex' }}>
-        <button onClick={() => setOpenMenu(openMenu === 'export' ? null : 'export')} style={getToolButtonStyle(openMenu === 'export', palette)}>
-          Export
-        </button>
-        {openMenu === 'export' && (
-          <div style={menuPanelStyle}>
-            <button
-              onClick={
-                hasImportedModel
-                  ? () => {
-                      onExportStl();
-                      setOpenMenu(null);
-                    }
-                  : undefined
-              }
-              style={menuItemButtonStyle(!hasImportedModel)}
-            >
-              Export STL
-            </button>
-            <button
-              onClick={
-                hasImportedModel
-                  ? () => {
-                      onExportObj();
-                      setOpenMenu(null);
-                    }
-                  : undefined
-              }
-              style={menuItemButtonStyle(!hasImportedModel)}
-            >
-              Export OBJ
-            </button>
-            <button
-              onClick={() => {
-                onExportPng();
-                setOpenMenu(null);
-              }}
-              style={menuItemButtonStyle(false)}
-            >
-              Export PNG
-            </button>
-            <button
-              onClick={() => {
-                onExportReport();
-                setOpenMenu(null);
-              }}
-              style={menuItemButtonStyle(false)}
-            >
-              Export Report
-            </button>
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={onImportClick}
-        disabled={isImporting}
+      <div
+        ref={menuRef}
         style={{
-          padding: '8px 12px',
-          backgroundColor: theme.accent,
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '12px',
-          fontWeight: 700,
-          cursor: isImporting ? 'wait' : 'pointer',
-          whiteSpace: 'nowrap'
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginLeft: isCompact ? 0 : 'auto',
+          order: isCompact ? 4 : 0,
+          flex: '0 0 auto'
         }}
       >
-        {isImporting ? 'Loading...' : 'Import Model'}
-      </button>
+        <div style={{ position: 'relative', display: 'inline-flex' }}>
+          <button
+            onClick={() => setOpenMenu(openMenu === 'export' ? null : 'export')}
+            style={getToolButtonStyle(openMenu === 'export', palette)}
+            type="button"
+          >
+            Export
+          </button>
+          {openMenu === 'export' && (
+            <div style={{ ...menuPanelStyle, top: isCompact ? '44px' : '42px' }}>
+              <button
+                type="button"
+                onClick={
+                  hasImportedModel
+                    ? () => {
+                        onExportStl();
+                        setOpenMenu(null);
+                      }
+                    : undefined
+                }
+                style={menuItemButtonStyle(!hasImportedModel)}
+              >
+                Export STL
+              </button>
+              <button
+                type="button"
+                onClick={
+                  hasImportedModel
+                    ? () => {
+                        onExportObj();
+                        setOpenMenu(null);
+                      }
+                    : undefined
+                }
+                style={menuItemButtonStyle(!hasImportedModel)}
+              >
+                Export OBJ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onExportPng();
+                  setOpenMenu(null);
+                }}
+                style={menuItemButtonStyle(false)}
+              >
+                Screenshot PNG
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div style={{ position: 'relative', display: 'inline-flex' }}>
+          <button
+            onClick={() => setOpenMenu(openMenu === 'report' ? null : 'report')}
+            style={getToolButtonStyle(openMenu === 'report', palette)}
+            type="button"
+          >
+            Report
+          </button>
+          {openMenu === 'report' && (
+            <div style={{ ...menuPanelStyle, top: isCompact ? '44px' : '42px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  onExportReportHtml();
+                  setOpenMenu(null);
+                }}
+                style={menuItemButtonStyle(false)}
+              >
+                Report HTML
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onExportReportPdf();
+                  setOpenMenu(null);
+                }}
+                style={menuItemButtonStyle(false)}
+              >
+                Report PDF
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

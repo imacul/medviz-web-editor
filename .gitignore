@@ -13,3 +13,7 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+.claude/
+.env
+.env.local
+.env.*.local

@@ -10,7 +10,9 @@ export function simplifyGeometryToTargetTriangles(sourceGeometry, targetTriangle
   const currentTriangles = currentVertices / 3;
 
   if (!position || currentTriangles <= targetTriangles) {
-    return sourceGeometry.clone();
+    const cloned = sourceGeometry.clone();
+    cloned.userData = { ...(sourceGeometry.userData ?? {}) };
+    return cloned;
   }
 
   const targetVertices = Math.max(3, Math.floor(targetTriangles * 3));
@@ -27,5 +29,6 @@ export function simplifyGeometryToTargetTriangles(sourceGeometry, targetTriangle
 
   indexed.computeVertexNormals();
   indexed.computeBoundingBox();
+  indexed.userData = { ...(sourceGeometry.userData ?? {}) };
   return indexed;
 }

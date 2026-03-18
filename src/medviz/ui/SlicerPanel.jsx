@@ -16,7 +16,9 @@ const SlicerPanel = ({
   applyPermanentCut,
   cutApplied,
   hasImportedModel,
-  resetCut
+  resetCut,
+  isMobile = false,
+  isTablet = false
 }) => {
   if (!show) return null;
   const palette = getUiPalette(activeTheme, theme);
@@ -24,10 +26,12 @@ const SlicerPanel = ({
   return (
     <div
       style={{
-        ...getPanelStyle(activeTheme, '80px', 'right'),
+        ...getPanelStyle(activeTheme, '80px', 'right', { isMobile, isTablet }),
         background: palette.panelBg,
         backdropFilter: 'blur(10px)',
-        border: `1px solid ${palette.border}`
+        border: `1px solid ${palette.border}`,
+        overflow: 'auto',
+        maxHeight: isMobile ? '52vh' : '75vh'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>

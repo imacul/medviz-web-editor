@@ -32,6 +32,7 @@ export class OrbitControls {
     this.onMouseWheel = this.onMouseWheel.bind(this);
 
     this.mouseButton = -1;
+    this.onInteractionEnd = null; // optional callback: () => void
 
     this.domElement.addEventListener('mousedown', this.onMouseDown);
     this.domElement.addEventListener('wheel', this.onMouseWheel);
@@ -80,6 +81,7 @@ export class OrbitControls {
     this.mouseButton = -1;
     this.domElement.removeEventListener('mousemove', this.onMouseMove);
     this.domElement.removeEventListener('mouseup', this.onMouseUp);
+    this.onInteractionEnd?.();
   }
 
   onMouseWheel(event) {
@@ -91,6 +93,7 @@ export class OrbitControls {
       this.scale *= 0.95;
     }
     this.update();
+    this.onInteractionEnd?.();
   }
 
   pan(deltaX, deltaY) {

@@ -11,12 +11,27 @@ export function getUiPalette(activeTheme, theme) {
   };
 }
 
-export function getPanelStyle(activeTheme, top, side) {
+export function getPanelStyle(activeTheme, top, side, options = {}) {
+  const { isMobile = false, isTablet = false, bottomOffset = '58px' } = options;
+
+  if (isMobile) {
+    return {
+      position: 'absolute',
+      left: '12px',
+      right: '12px',
+      bottom: `calc(${bottomOffset} + env(safe-area-inset-bottom, 0px))`,
+      width: 'auto',
+      borderRadius: '18px',
+      padding: '14px',
+      zIndex: 220
+    };
+  }
+
   return {
     position: 'absolute',
     top,
-    width: '320px',
-    borderRadius: '12px',
+    width: isTablet ? 'min(340px, calc(100vw - 32px))' : '320px',
+    borderRadius: isTablet ? '14px' : '12px',
     padding: '16px',
     zIndex: 200,
     [side]: '20px'

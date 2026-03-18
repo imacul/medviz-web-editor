@@ -2,10 +2,10 @@
 import * as THREE from 'three';
 import { THEMES } from './medviz/constants/themes';
 import { SCENE_NAMES } from './medviz/constants/scenes';
-import { importModelFile, isSupportedModelFile } from './medviz/io/modelImport';
+import { importModelSource, isSupportedModelFile, isSupportedModelSource } from './medviz/io/modelImport';
 import { meshToBinarySTL } from './medviz/io/stlExport';
 import { meshToOBJ } from './medviz/io/objExport';
-import { buildHtmlReport } from './medviz/io/reportExport';
+import { buildHtmlReport, buildPdfReportBlob } from './medviz/io/reportExport';
 import medvizLogo from '../assets/medviz-logo.svg';
 import './medviz/styles/ui.css';
 import { createTextSprite } from './medviz/utils/textSprite';
@@ -16,7 +16,6 @@ import {
   createNeuralNetworkScene
 } from './medviz/scene/presets';
 import { makeAxisPlane, trimGeometryByBox, trimGeometryByPlane } from './medviz/mesh/trim';
-import { simplifyGeometryToTargetTriangles } from './medviz/mesh/optimize';
 
 import { OrbitControls } from './medviz/controls/OrbitControls';
 import { TransformControls } from './medviz/controls/TransformControls';
@@ -52,7 +51,53 @@ const getSegmentSubdivisionLevel = (triCount) => {
   return level;
 };
 
-const Medical3DCanvas = ({ onGoHome }) => {
+const getInitialViewportWidth = () =>
+  typeof window === 'undefined' ? 1280 : window.innerWidth || document.documentElement.clientWidth || 1280;
+
+const SPATIAL_UNIT_OPTIONS = [
+  { value: 'mm', label: 'Millimeters (mm)', unitScaleToMm: 1 },
+  { value: 'cm', label: 'Centimeters (cm)', unitScaleToMm: 10 },
+  { value: 'm', label: 'Meters (m)', unitScaleToMm: 1000 }
+];
+
+const ORIENTATION_DIRECTION_OPTIONS = [
+  { value: 'right', label: 'Right', shortLabel: 'R', group: 'lr', opposite: 'left' },
+  { value: 'left', label: 'Left', shortLabel: 'L', group: 'lr', opposite: 'right' },
+  { value: 'anterior', label: 'Anterior', shortLabel: 'A', group: 'ap', opposite: 'posterior' },
+  { value: 'posterior', label: 'Posterior', shortLabel: 'P', group: 'ap', opposite: 'anterior' },
+  { value: 'superior', label: 'Superior', shortLabel: 'S', group: 'si', opposite: 'inferior' },
+  { value: 'inferior', label: 'Inferior', shortLabel: 'I', group: 'si', opposite: 'superior' }
+];
+
+const getUnitOption = (unit) =>
+  SPATIAL_UNIT_OPTIONS.find((option) => option.value === unit) ?? SPATIAL_UNIT_OPTIONS[0];
+
+const getOrientationOption = (value) =>
+  ORIENTATION_DIRECTION_OPTIONS.find((option) => option.value === value) ?? ORIENTATION_DIRECTION_OPTIONS[0];
+
+const DEFAULT_SPATIAL_ORIENTATION = {
+  positiveX: 'right',
+  positiveY: 'superior',
+  positiveZ: 'anterior',
+  status: 'unconfirmed'
+};
+
+const scaleBounds = (bounds, factor) => ({
+  x: Number((Number(bounds?.x ?? 0) * factor).toFixed(2)),
+  y: Number((Number(bounds?.y ?? 0) * factor).toFixed(2)),
+  z: Number((Number(bounds?.z ?? 0) * factor).toFixed(2)),
+});
+
+const Medical3DCanvas = ({
+  onGoHome,
+  initialModelSource = null,
+  onInitialModelStateChange = null,
+  onImportedModelPersist = null,
+  readOnly = false,
+  initialEditorState = null,
+  onEditorStateChange = null,
+  externalEditorState = null,
+}) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -61,7 +106,8 @@ const Medical3DCanvas = ({ onGoHome }) => {
   const objectsRef = useRef([]);
   const animationFrameRef = useRef(null);
   const fileInputRef = useRef(null);
-  const [activeScene, setActiveScene] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(getInitialViewportWidth);
+  const [activeScene, setActiveScene] = useState(4);
   const [activeTheme, setActiveTheme] = useState(0);
   const [importedModel, setImportedModel] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -71,11 +117,13 @@ const Medical3DCanvas = ({ onGoHome }) => {
   const [showSlicePlane, setShowSlicePlane] = useState(true);
   const [showSlicerPanel, setShowSlicerPanel] = useState(false);
   const [showToolsPanel, setShowToolsPanel] = useState(false);
-  const [showModelInfoPanel, setShowModelInfoPanel] = useState(true);
+  const [showModelInfoPanel, setShowModelInfoPanel] = useState(getInitialViewportWidth() >= 768);
   const [transformMode, setTransformMode] = useState('translate'); // 'translate' or 'rotate'
   const [gizmosEnabled, setGizmosEnabled] = useState(false);
   const [cutApplied, setCutApplied] = useState(false);
   const [modelMeta, setModelMeta] = useState(null);
+  const [spatialCalibration, setSpatialCalibration] = useState(null);
+  const [spatialOrientation, setSpatialOrientation] = useState(DEFAULT_SPATIAL_ORIENTATION);
   const clippingPlaneRef = useRef(null);
   const slicePlaneHelperRef = useRef(null);
   const persistentModelRef = useRef(null);
@@ -93,12 +141,17 @@ const Medical3DCanvas = ({ onGoHome }) => {
   const measurementObjectMapRef = useRef(new Map());
   const markerObjectMapRef = useRef(new Map());
   const fpsRef = useRef({ frames: 0, last: performance.now(), value: 60 });
+  const initialEditorStateRef = useRef(initialEditorState);
+  const cameraStateRef = useRef(null);
+  const editorStateEmitTimerRef = useRef(null);
+  const [paintVersion, setPaintVersion] = useState(0);
   const markerCounterRef = useRef(1);
   const idCounterRef = useRef(1);
   const segmentPaintingRef = useRef(false);
   const segmentLastPaintPointRef = useRef(null);
   const segmentControlsWereEnabledRef = useRef(true);
   const segmentOffsetPreviewMeshRef = useRef(null);
+  const initialModelSignatureRef = useRef(null);
 
   const [activeTool, setActiveTool] = useState('slice');
   const [measurements, setMeasurements] = useState([]);
@@ -203,29 +256,132 @@ const Medical3DCanvas = ({ onGoHome }) => {
   const sceneNames = SCENE_NAMES;
   const themes = THEMES;
   const LARGE_MODEL_TRIANGLES = 300000;
-  const SIMPLIFY_TRIANGLES_THRESHOLD = 1000000;
-  const SIMPLIFY_TRIANGLES_TARGET = 850000;
   const HARD_TRIANGLE_LIMIT = 2500000;
 
-  const getGeometryStats = (geometry) => {
-    if (!geometry.boundingBox) {
-      geometry.computeBoundingBox();
+  const createDefaultSpatialCalibration = (meta) => {
+    if (!meta) {
+      return null;
     }
 
-    const position = geometry.getAttribute('position');
-    const vertices = position?.count ?? 0;
-    const triangles = geometry.index ? Math.floor(geometry.index.count / 3) : Math.floor(vertices / 3);
-    const bounds = geometry.boundingBox;
+    const defaultUnit = getUnitOption(meta.sourceUnit).value;
+    return {
+      sourceUnit: defaultUnit,
+      unitScaleToMm: getUnitOption(defaultUnit).unitScaleToMm,
+      status: 'inferred'
+    };
+  };
+
+  const normalizeSpatialCalibration = (value) => {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const sourceUnit = getUnitOption(value.sourceUnit).value;
+    const unitScaleToMm = Number(value.unitScaleToMm);
 
     return {
-      vertices,
-      triangles,
-      bounds: {
-        x: ((bounds?.max.x ?? 0) - (bounds?.min.x ?? 0)).toFixed(2),
-        y: ((bounds?.max.y ?? 0) - (bounds?.min.y ?? 0)).toFixed(2),
-        z: ((bounds?.max.z ?? 0) - (bounds?.min.z ?? 0)).toFixed(2)
-      }
+      sourceUnit,
+      unitScaleToMm: Number.isFinite(unitScaleToMm) && unitScaleToMm > 0
+        ? unitScaleToMm
+        : getUnitOption(sourceUnit).unitScaleToMm,
+      status: value.status === 'confirmed' ? 'confirmed' : 'inferred'
     };
+  };
+
+  const getEffectiveSpatialCalibration = (metaOverride = modelMeta, calibrationOverride = spatialCalibration) => {
+    const normalized = normalizeSpatialCalibration(calibrationOverride);
+    return normalized ?? createDefaultSpatialCalibration(metaOverride);
+  };
+
+  const getEffectiveUnitScaleToMm = (metaOverride = modelMeta, calibrationOverride = spatialCalibration) =>
+    getEffectiveSpatialCalibration(metaOverride, calibrationOverride)?.unitScaleToMm ?? 1;
+
+  const getEffectiveSourceUnit = (metaOverride = modelMeta, calibrationOverride = spatialCalibration) =>
+    getEffectiveSpatialCalibration(metaOverride, calibrationOverride)?.sourceUnit ?? getUnitOption(metaOverride?.sourceUnit).value;
+
+  const normalizeSpatialOrientation = (value) => {
+    if (!value || typeof value !== 'object') {
+      return { ...DEFAULT_SPATIAL_ORIENTATION };
+    }
+
+    return {
+      positiveX: getOrientationOption(value.positiveX).value,
+      positiveY: getOrientationOption(value.positiveY).value,
+      positiveZ: getOrientationOption(value.positiveZ).value,
+      status: value.status === 'confirmed' ? 'confirmed' : 'unconfirmed'
+    };
+  };
+
+  const isSpatialOrientationValid = (value) => {
+    const normalized = normalizeSpatialOrientation(value);
+    const groups = [
+      getOrientationOption(normalized.positiveX).group,
+      getOrientationOption(normalized.positiveY).group,
+      getOrientationOption(normalized.positiveZ).group,
+    ];
+
+    return new Set(groups).size === 3;
+  };
+
+  const getResolvedSpatialOrientation = (orientationOverride = spatialOrientation) => {
+    const normalized = normalizeSpatialOrientation(orientationOverride);
+    return {
+      ...normalized,
+      status:
+        normalized.status === 'confirmed' && isSpatialOrientationValid(normalized)
+          ? 'confirmed'
+          : 'unconfirmed'
+    };
+  };
+
+  const getOrientationAxisSummary = (orientationOverride = spatialOrientation) => {
+    const resolved = getResolvedSpatialOrientation(orientationOverride);
+    const x = getOrientationOption(resolved.positiveX);
+    const y = getOrientationOption(resolved.positiveY);
+    const z = getOrientationOption(resolved.positiveZ);
+
+    return {
+      status: resolved.status,
+      axes: [
+        { axis: 'X', positive: x, negative: getOrientationOption(x.opposite) },
+        { axis: 'Y', positive: y, negative: getOrientationOption(y.opposite) },
+        { axis: 'Z', positive: z, negative: getOrientationOption(z.opposite) },
+      ]
+    };
+  };
+
+  const getResolvedModelMeta = (metaOverride = modelMeta, calibrationOverride = spatialCalibration) => {
+    if (!metaOverride) {
+      return null;
+    }
+
+    const effectiveCalibration = getEffectiveSpatialCalibration(metaOverride, calibrationOverride);
+    const unitScaleToMm = effectiveCalibration?.unitScaleToMm ?? metaOverride.unitScaleToMm ?? 1;
+    const sourceUnit = effectiveCalibration?.sourceUnit ?? getUnitOption(metaOverride.sourceUnit).value;
+    const calibrationStatus = effectiveCalibration?.status ?? 'inferred';
+
+    return {
+      ...metaOverride,
+      sourceUnit,
+      unitScaleToMm,
+      estimatedBoundsMm: scaleBounds(metaOverride.sourceBounds, unitScaleToMm),
+      calibrationStatus,
+      unitInference:
+        calibrationStatus === 'confirmed'
+          ? `Import units confirmed as ${sourceUnit}.`
+          : metaOverride.unitInference
+    };
+  };
+
+  const getDistanceMmBetweenPoints = (
+    pointA,
+    pointB,
+    calibrationOverride = spatialCalibration,
+    metaOverride = modelMeta
+  ) => {
+    const normScale = metaOverride?.normalizationScale ?? 1;
+    const sceneDistance = pointA.distanceTo(pointB);
+    return (sceneDistance / normScale) * getEffectiveUnitScaleToMm(metaOverride, calibrationOverride);
   };
 
   const getSegmentGroup = (groupId) => SEGMENT_GROUP_LOOKUP.get(groupId) ?? SEGMENT_GROUP_LOOKUP.get(0);
@@ -401,27 +557,13 @@ const Medical3DCanvas = ({ onGoHome }) => {
 
   const getSegmentPreviewMmToScene = (geometry) => {
     const normScale = Number(modelMeta?.normalizationScale);
-    const sourceMaxDim = Number(modelMeta?.sourceMaxDimension);
+    const unitScaleToMm = Number(getEffectiveUnitScaleToMm());
 
     if (!Number.isFinite(normScale) || normScale <= 0) {
       return 0.02;
     }
 
-    // Heuristic unit inference for scans/imports without unit metadata.
-    // Typical orthosis scans are ~100-350 mm. If source dimensions are small,
-    // they are commonly stored in meters (or cm), not mm.
-    let unitDivisor = 1; // source units are mm
-    if (Number.isFinite(sourceMaxDim) && sourceMaxDim > 0) {
-      if (sourceMaxDim <= 5) {
-        unitDivisor = 1000; // meters -> mm
-      } else if (sourceMaxDim <= 50) {
-        unitDivisor = 10; // cm -> mm
-      } else {
-        unitDivisor = 1; // likely mm
-      }
-    }
-
-    return normScale / unitDivisor;
+    return normScale / (Number.isFinite(unitScaleToMm) && unitScaleToMm > 0 ? unitScaleToMm : 1);
   };
 
   const ensureSegmentOffsetPreview = () => {
@@ -850,11 +992,23 @@ const Medical3DCanvas = ({ onGoHome }) => {
 
   const downloadBlob = (blob, fileName) => {
     const url = URL.createObjectURL(blob);
+    triggerDownload(url, fileName);
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  };
+
+  const triggerDownload = (url, fileName) => {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = fileName;
+    anchor.rel = 'noopener';
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => {
+      anchor.remove();
+    }, 0);
   };
 
   const setMeasurementAndMarkerVisibility = (visible) => {
@@ -944,10 +1098,7 @@ const Medical3DCanvas = ({ onGoHome }) => {
   const exportScreenshot = () => {
     try {
       const url = captureScreenshotDataUrl(includeOverlaysInScreenshot);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `medviz-screenshot-${Date.now()}.png`;
-      anchor.click();
+      triggerDownload(url, `medviz-screenshot-${Date.now()}.png`);
       pushToast('Screenshot exported.');
     } catch (error) {
       console.error('Failed to export screenshot:', error);
@@ -959,7 +1110,8 @@ const Medical3DCanvas = ({ onGoHome }) => {
     try {
       const screenshotDataUrl = captureScreenshotDataUrl(includeOverlaysInScreenshot);
       const html = buildHtmlReport({
-        modelMeta,
+        modelMeta: getResolvedModelMeta(),
+        spatialOrientation: getResolvedSpatialOrientation(),
         measurements,
         markers,
         screenshotDataUrl
@@ -970,6 +1122,24 @@ const Medical3DCanvas = ({ onGoHome }) => {
     } catch (error) {
       console.error('Failed to export report:', error);
       pushToast('Report export failed.');
+    }
+  };
+
+  const exportReportPdf = async () => {
+    try {
+      const screenshotDataUrl = captureScreenshotDataUrl(includeOverlaysInScreenshot);
+      const blob = await buildPdfReportBlob({
+        modelMeta: getResolvedModelMeta(),
+        spatialOrientation: getResolvedSpatialOrientation(),
+        measurements,
+        markers,
+        screenshotDataUrl
+      });
+      downloadBlob(blob, `medviz-report-${Date.now()}.pdf`);
+      pushToast('PDF report exported.');
+    } catch (error) {
+      console.error('Failed to export PDF report:', error);
+      pushToast('PDF report export failed.');
     }
   };
 
@@ -989,7 +1159,43 @@ const Medical3DCanvas = ({ onGoHome }) => {
     }
   };
 
+  const frameCameraToModel = (mesh) => {
+    if (!mesh || !cameraRef.current || !controlsRef.current) {
+      return;
+    }
+
+    mesh.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(mesh);
+
+    if (bounds.isEmpty()) {
+      return;
+    }
+
+    const size = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    const maxDimension = Math.max(size.x, size.y, size.z, 1);
+    const fov = THREE.MathUtils.degToRad(cameraRef.current.fov || 50);
+    const distance = Math.max((maxDimension * 0.9) / Math.tan(fov / 2), maxDimension * 1.6);
+
+    cameraRef.current.position.set(
+      center.x + distance * 0.75,
+      center.y + distance * 0.55,
+      center.z + distance
+    );
+    cameraRef.current.near = Math.max(0.01, distance / 100);
+    cameraRef.current.far = Math.max(1000, distance * 20);
+    cameraRef.current.updateProjectionMatrix();
+
+    controlsRef.current.target.copy(center);
+    controlsRef.current.update();
+  };
+
   const resetCameraView = () => {
+    if (persistentModelRef.current) {
+      frameCameraToModel(persistentModelRef.current);
+      return;
+    }
+
     if (!cameraRef.current || !controlsRef.current) return;
     cameraRef.current.position.set(8, 6, 10);
     controlsRef.current.target.set(0, 0, 0);
@@ -1136,6 +1342,108 @@ const Medical3DCanvas = ({ onGoHome }) => {
     return label;
   };
 
+  const replaceMeasurementLabel = (id, distanceMm, pointA, pointB) => {
+    const scene = sceneRef.current;
+    const measurement = measurementObjectMapRef.current.get(id);
+
+    if (!scene || !measurement?.label) {
+      return;
+    }
+
+    scene.remove(measurement.label);
+    measurement.label.material.map.dispose();
+    measurement.label.material.dispose();
+
+    const mid = pointA.clone().add(pointB).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.1, 0));
+    const nextLabel = makeMeasureLabel(`${distanceMm.toFixed(2)} mm`, mid);
+    scene.add(nextLabel);
+    measurement.label = nextLabel;
+    measurement.distanceMm = distanceMm;
+  };
+
+  const refreshMeasurementValues = (calibrationOverride = spatialCalibration, options = {}) => {
+    const { silent = false } = options;
+
+    setMeasurements((prev) =>
+      prev.map((measurement) => {
+        const pointA = new THREE.Vector3(
+          measurement.pointA.x,
+          measurement.pointA.y,
+          measurement.pointA.z
+        );
+        const pointB = new THREE.Vector3(
+          measurement.pointB.x,
+          measurement.pointB.y,
+          measurement.pointB.z
+        );
+        const distanceMm = getDistanceMmBetweenPoints(pointA, pointB, calibrationOverride);
+        replaceMeasurementLabel(measurement.id, distanceMm, pointA, pointB);
+        return {
+          ...measurement,
+          distanceMm,
+        };
+      })
+    );
+
+    if (!silent) {
+      pushToast(`Measurement units updated to ${getEffectiveSourceUnit(modelMeta, calibrationOverride)}.`);
+    }
+  };
+
+  const applySpatialCalibration = (nextCalibration, options = {}) => {
+    const normalized = normalizeSpatialCalibration(nextCalibration);
+    if (!normalized) {
+      return;
+    }
+
+    setSpatialCalibration((prev) => {
+      const current = normalizeSpatialCalibration(prev);
+      if (
+        current &&
+        current.sourceUnit === normalized.sourceUnit &&
+        current.unitScaleToMm === normalized.unitScaleToMm &&
+        current.status === normalized.status
+      ) {
+        return prev;
+      }
+
+      return normalized;
+    });
+
+    if (measurementObjectMapRef.current.size > 0) {
+      refreshMeasurementValues(normalized, options);
+    }
+  };
+
+  const updateSpatialOrientationDraft = (axisKey, direction) => {
+    setSpatialOrientation((prev) => ({
+      ...normalizeSpatialOrientation(prev),
+      [axisKey]: getOrientationOption(direction).value,
+      status: 'unconfirmed'
+    }));
+  };
+
+  const confirmSpatialOrientation = () => {
+    setSpatialOrientation((prev) => {
+      const normalized = normalizeSpatialOrientation(prev);
+      if (!isSpatialOrientationValid(normalized)) {
+        pushToast('Orientation mapping must cover left/right, anterior/posterior, and superior/inferior exactly once.');
+        return normalized;
+      }
+
+      pushToast('Orientation reference confirmed for this case review.');
+      return {
+        ...normalized,
+        status: 'confirmed'
+      };
+    });
+  };
+
+  const resetSpatialOrientation = () => {
+    setSpatialOrientation({ ...DEFAULT_SPATIAL_ORIENTATION });
+    pushToast('Orientation reference reset to unconfirmed.');
+  };
+
   const clearMeasurements = (silent = false) => {
     const scene = sceneRef.current;
     if (!scene) return;
@@ -1179,25 +1487,125 @@ const Medical3DCanvas = ({ onGoHome }) => {
 
     const [a, b] = measurementDraftRef.current;
     const id = `msr-${idCounterRef.current++}`;
-    const distance = a.point.distanceTo(b.point);
+    const sceneDistance = a.point.distanceTo(b.point);
+    const distanceMm = getDistanceMmBetweenPoints(a.point, b.point);
     const line = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([a.point, b.point]),
       new THREE.LineBasicMaterial({ color: 0x00d3ff })
     );
     sceneRef.current.add(line);
     const mid = a.point.clone().add(b.point).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.1, 0));
-    const label = makeMeasureLabel(`${distance.toFixed(2)} mm`, mid);
+    const label = makeMeasureLabel(`${distanceMm.toFixed(2)} mm`, mid);
     sceneRef.current.add(label);
 
-    measurementObjectMapRef.current.set(id, { id, line, label, markers: [a.marker, b.marker], distance });
+    measurementObjectMapRef.current.set(id, { id, line, label, markers: [a.marker, b.marker], sceneDistance });
     measurementDraftRef.current = [];
-    setMeasurements((prev) => [...prev, { id, distanceMm: distance }]);
+    setMeasurements((prev) => [...prev, {
+      id,
+      distanceMm,
+      pointA: { x: a.point.x, y: a.point.y, z: a.point.z },
+      pointB: { x: b.point.x, y: b.point.y, z: b.point.z },
+    }]);
   };
 
-  const addMarkerAtPoint = (point) => {
+  const restoreMeasurement = (ptA, ptB, id, distanceMm, calibrationOverride = spatialCalibration) => {
     if (!sceneRef.current) return;
-    const id = `mk-${idCounterRef.current++}`;
-    const label = `Marker ${markerCounterRef.current++}`;
+    const pointA = new THREE.Vector3(ptA.x, ptA.y, ptA.z);
+    const pointB = new THREE.Vector3(ptB.x, ptB.y, ptB.z);
+    const resolvedDistanceMm = Number.isFinite(Number(distanceMm))
+      ? getDistanceMmBetweenPoints(pointA, pointB, calibrationOverride)
+      : getDistanceMmBetweenPoints(pointA, pointB, calibrationOverride);
+    const markerMat = new THREE.MeshStandardMaterial({ color: 0x00d3ff, emissive: 0x00445f, emissiveIntensity: 0.4 });
+    const mA = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), markerMat.clone());
+    mA.position.copy(pointA);
+    const mB = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), markerMat.clone());
+    mB.position.copy(pointB);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([pointA, pointB]),
+      new THREE.LineBasicMaterial({ color: 0x00d3ff })
+    );
+    const mid = pointA.clone().add(pointB).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.1, 0));
+    const label = makeMeasureLabel(`${resolvedDistanceMm.toFixed(2)} mm`, mid);
+    sceneRef.current.add(mA, mB, line, label);
+    measurementObjectMapRef.current.set(id, { id, line, label, markers: [mA, mB], sceneDistance: pointA.distanceTo(pointB), distanceMm: resolvedDistanceMm });
+    setMeasurements((prev) => [...prev, { id, distanceMm: resolvedDistanceMm, pointA: ptA, pointB: ptB }]);
+  };
+
+  const serializeSegmentColors = () => {
+    const ids = persistentModelRef.current?.geometry?.userData?.segmentVertexGroupIds;
+    if (!(ids instanceof Uint8Array) || !ids.some((id) => id !== 0)) return null;
+    let binary = '';
+    const chunk = 8192;
+    for (let i = 0; i < ids.length; i += chunk) {
+      binary += String.fromCharCode(...ids.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  };
+
+  const applySegmentColors = (base64Data) => {
+    const mesh = persistentModelRef.current;
+    if (!mesh?.geometry || !base64Data) return;
+    try {
+      const binary = atob(base64Data);
+      const ids = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) ids[i] = binary.charCodeAt(i);
+      // Prepare geometry (same subdivision that happens when painting begins)
+      const geometry = ensureSegmentPaintGeometry(mesh);
+      if (!geometry) return;
+      const expectedCount = geometry.attributes.position.count;
+      if (ids.length !== expectedCount) {
+        console.warn('Segment data mismatch — skipping paint restore.');
+        return;
+      }
+      const base = getSegmentGroup(0).rgb;
+      const colors = new Float32Array(expectedCount * 3);
+      for (let i = 0; i < expectedCount; i++) {
+        colors[i * 3] = base.r; colors[i * 3 + 1] = base.g; colors[i * 3 + 2] = base.b;
+      }
+      const colorAttr = new THREE.Float32BufferAttribute(colors, 3);
+      colorAttr.setUsage(THREE.DynamicDrawUsage);
+      geometry.setAttribute('color', colorAttr);
+      geometry.userData.segmentVertexGroupIds = ids;
+      refreshSegmentationColors(mesh);
+      updateSegmentMaterialState(mesh);
+    } catch (e) {
+      console.warn('Failed to restore segment paint:', e);
+    }
+  };
+
+  const restoreEditorState = (state) => {
+    if (!state) return;
+    const nextCalibration = normalizeSpatialCalibration(state.spatialCalibration) ?? createDefaultSpatialCalibration(modelMeta);
+    if (nextCalibration) {
+      applySpatialCalibration(nextCalibration, { silent: true });
+    }
+    setSpatialOrientation(normalizeSpatialOrientation(state.spatialOrientation));
+    if (state.markers?.length) {
+      state.markers.forEach((m) => addMarkerAtPoint(
+        new THREE.Vector3(m.position.x, m.position.y, m.position.z),
+        m.id,
+        m.label
+      ));
+    }
+    if (state.measurements?.length) {
+      state.measurements.forEach((m) => {
+        if (m.pointA && m.pointB) restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, nextCalibration);
+      });
+    }
+    if (state.camera && cameraRef.current && controlsRef.current) {
+      cameraRef.current.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
+      controlsRef.current.target.set(state.camera.target.x, state.camera.target.y, state.camera.target.z);
+      controlsRef.current.update();
+    }
+    if (state.segmentColors) {
+      applySegmentColors(state.segmentColors);
+    }
+  };
+
+  const addMarkerAtPoint = (point, existingId = null, existingLabel = null) => {
+    if (!sceneRef.current) return;
+    const id = existingId ?? `mk-${idCounterRef.current++}`;
+    const label = existingLabel ?? `Marker ${markerCounterRef.current++}`;
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.08, 16, 16),
       new THREE.MeshStandardMaterial({ color: 0xffc857, emissive: 0x663d00, emissiveIntensity: 0.3 })
@@ -1246,12 +1654,13 @@ const Medical3DCanvas = ({ onGoHome }) => {
     if (!silent) pushToast('Markers cleared.');
   };
 
-  const loadModel = async (file) => {
+  const loadModel = async (source) => {
     setIsImporting(true);
+    let didSucceed = false;
     try {
-      const imported = await importModelFile(file);
-      let geometry = imported.geometry;
-      let meta = imported.modelMeta;
+      const imported = await importModelSource(source);
+      const geometry = imported.geometry;
+      const meta = imported.modelMeta;
       const { extension } = imported;
 
       if (meta.triangles > HARD_TRIANGLE_LIMIT) {
@@ -1261,26 +1670,11 @@ const Medical3DCanvas = ({ onGoHome }) => {
         );
       }
 
-      if (meta.triangles > SIMPLIFY_TRIANGLES_THRESHOLD) {
-        try {
-          const simplified = simplifyGeometryToTargetTriangles(geometry, SIMPLIFY_TRIANGLES_TARGET);
-          geometry.dispose();
-          geometry = simplified;
-          const stats = getGeometryStats(geometry);
-          meta = {
-            ...meta,
-            vertices: stats.vertices,
-            triangles: stats.triangles,
-            bounds: stats.bounds
-          };
-          pushToast(
-            `Large model simplified to ${stats.triangles.toLocaleString()} triangles for smoother interaction.`
-          );
-        } catch (simplifyError) {
-          console.error('Simplification failed:', simplifyError);
-          pushToast('Could not simplify large model automatically. Loading original geometry.');
-        }
-      } else if (meta.triangles > LARGE_MODEL_TRIANGLES) {
+      if (imported.wasSimplified) {
+        pushToast(
+          `Large model simplified from ${imported.sourceTriangles.toLocaleString()} to ${meta.triangles.toLocaleString()} triangles for smoother interaction.`
+        );
+      } else if (imported.shouldWarnLargeModel || meta.triangles > LARGE_MODEL_TRIANGLES) {
         pushToast(`Large model detected (${meta.triangles.toLocaleString()} triangles). Performance may degrade.`);
       }
 
@@ -1324,25 +1718,153 @@ const Medical3DCanvas = ({ onGoHome }) => {
       setImportedModel(mesh);
       setActiveScene(4);
       setModelMeta({ ...meta, extension });
+      setSpatialCalibration(createDefaultSpatialCalibration(meta));
+      setSpatialOrientation({ ...DEFAULT_SPATIAL_ORIENTATION });
+      frameCameraToModel(mesh);
       queueSegmentPreviewRefresh();
-      pushToast(`${extension.toUpperCase()} model imported.`);
+      pushToast(`${extension.toUpperCase()} model imported. Review import units in Model Info before relying on measurements.`);
+      didSucceed = true;
     } catch (error) {
       console.error('Error loading model:', error);
       pushToast(error?.message || 'Failed to load model. Please choose a valid STL/OBJ/PLY file.');
     } finally {
       setIsImporting(false);
     }
+
+    return didSucceed;
   };
 
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (file && isSupportedModelFile(file)) {
-      await loadModel(file);
+      const didLoad = await loadModel(file);
+      if (didLoad && onImportedModelPersist) {
+        try {
+          await onImportedModelPersist(file);
+          pushToast('Patient model saved to this case.');
+        } catch (error) {
+          pushToast(
+            error?.message || 'The model opened, but it could not be saved to this case.'
+          );
+        }
+      }
     } else {
       pushToast('Please select a valid STL, OBJ, or PLY file.');
     }
     event.target.value = '';
   };
+
+  useEffect(() => {
+    if (!initialModelSource) return;
+    if (!isSupportedModelSource(initialModelSource)) return;
+
+    const signature =
+      initialModelSource instanceof File
+        ? [
+            initialModelSource.name,
+            initialModelSource.size,
+            initialModelSource.lastModified,
+          ].join(':')
+        : [
+            initialModelSource.fileName,
+            initialModelSource.url,
+            initialModelSource.fileSizeBytes ?? 0,
+          ].join(':');
+
+    if (initialModelSignatureRef.current === signature) {
+      return;
+    }
+
+    initialEditorStateRef.current = initialEditorState;
+    initialModelSignatureRef.current = signature;
+    onInitialModelStateChange?.('importing');
+    void (async () => {
+      const didSucceed = await loadModel(initialModelSource);
+      if (didSucceed && initialEditorStateRef.current) {
+        restoreEditorState(initialEditorStateRef.current);
+      }
+      onInitialModelStateChange?.(didSucceed ? 'ready' : 'error');
+    })();
+  }, [initialModelSource, onInitialModelStateChange, initialEditorState]);
+
+  // Emit editor state to parent (debounced 1.5s) whenever annotations/measurements/paint change
+  useEffect(() => {
+    if (!onEditorStateChange) return;
+    if (editorStateEmitTimerRef.current) clearTimeout(editorStateEmitTimerRef.current);
+    editorStateEmitTimerRef.current = setTimeout(() => {
+      onEditorStateChange({
+        markers,
+        measurements,
+        camera: cameraStateRef.current,
+        segmentColors: serializeSegmentColors(),
+        spatialCalibration: getEffectiveSpatialCalibration(),
+        spatialOrientation: getResolvedSpatialOrientation(),
+      });
+    }, 1500);
+    return () => { if (editorStateEmitTimerRef.current) clearTimeout(editorStateEmitTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markers, measurements, onEditorStateChange, paintVersion, spatialCalibration, spatialOrientation]);
+
+  // Apply incremental diffs from external editor state (real-time sync from other users)
+  const appliedExternalStateRef = useRef(null);
+  useEffect(() => {
+    if (!externalEditorState) return;
+    // Avoid re-applying the same state
+    if (appliedExternalStateRef.current === externalEditorState) return;
+    appliedExternalStateRef.current = externalEditorState;
+
+    const externalCalibration = normalizeSpatialCalibration(externalEditorState.spatialCalibration);
+    if (externalCalibration) {
+      applySpatialCalibration(externalCalibration, { silent: true });
+    }
+    if (externalEditorState.spatialOrientation) {
+      setSpatialOrientation(getResolvedSpatialOrientation(externalEditorState.spatialOrientation));
+    }
+
+    // Sync markers: add any new ones not already present
+    const currentMarkerIds = new Set(markers.map((m) => m.id));
+    externalEditorState.markers?.forEach((m) => {
+      if (!currentMarkerIds.has(m.id)) {
+        addMarkerAtPoint(new THREE.Vector3(m.position.x, m.position.y, m.position.z), m.id, m.label);
+      }
+    });
+    // Remove markers no longer in external state
+    const externalMarkerIds = new Set(externalEditorState.markers?.map((m) => m.id) ?? []);
+    markers.forEach((m) => {
+      if (!externalMarkerIds.has(m.id)) deleteMarker(m.id);
+    });
+
+    // Sync measurements: add new ones
+    const currentMeasurementIds = new Set(measurements.map((m) => m.id));
+    externalEditorState.measurements?.forEach((m) => {
+      if (!currentMeasurementIds.has(m.id) && m.pointA && m.pointB) {
+        restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, externalCalibration);
+      }
+    });
+    // Remove measurements no longer in external state
+    const externalMeasurementIds = new Set(externalEditorState.measurements?.map((m) => m.id) ?? []);
+    measurements.forEach((m) => {
+      if (!externalMeasurementIds.has(m.id)) {
+        const scene = sceneRef.current;
+        if (scene) {
+          const obj = measurementObjectMapRef.current.get(m.id);
+          if (obj) {
+            obj.markers.forEach((mk) => { scene.remove(mk); mk.geometry.dispose(); mk.material.dispose(); });
+            scene.remove(obj.line); obj.line.geometry.dispose(); obj.line.material.dispose();
+            scene.remove(obj.label); obj.label.material.map.dispose(); obj.label.material.dispose();
+            measurementObjectMapRef.current.delete(m.id);
+          }
+        }
+        setMeasurements((prev) => prev.filter((x) => x.id !== m.id));
+      }
+    });
+
+    // Sync paint
+    if (externalEditorState.segmentColors) {
+      applySegmentColors(externalEditorState.segmentColors);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalEditorState]);
 
   // Update clipping plane when slicing parameters change
   useEffect(() => {
@@ -1479,6 +2001,7 @@ const Medical3DCanvas = ({ onGoHome }) => {
         controlsRef.current.enabled = segmentControlsWereEnabledRef.current;
       }
       queueSegmentPreviewRefresh();
+      setPaintVersion((v) => v + 1);
     };
 
     dom.addEventListener('pointerdown', handlePointerDown);
@@ -1685,6 +2208,14 @@ const Medical3DCanvas = ({ onGoHome }) => {
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
+
+    controls.onInteractionEnd = () => {
+      if (!camera) return;
+      cameraStateRef.current = {
+        position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
+      };
+    };
 
     // Professional Lighting Setup
     const hemisphere = new THREE.HemisphereLight(0xd8e7ff, 0x1e2436, 0.85);
@@ -1972,6 +2503,29 @@ const Medical3DCanvas = ({ onGoHome }) => {
   };
 
   const theme = themes[activeTheme];
+  const isMobileViewport = viewportWidth < 768;
+  const isTabletViewport = viewportWidth >= 768 && viewportWidth < 1180;
+  const resolvedModelMeta = getResolvedModelMeta();
+  const resolvedSpatialOrientation = getResolvedSpatialOrientation();
+  const orientationAxisSummary = getOrientationAxisSummary();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth || document.documentElement.clientWidth || 1280);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      return;
+    }
+
+    setShowModelInfoPanel(false);
+    setShowSlicerPanel(false);
+  }, [isMobileViewport]);
 
   return (
     <div style={{ width: '100%', height: '100vh', backgroundColor: `#${theme.background.toString(16).padStart(6, '0')}`, position: 'relative', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -1998,11 +2552,15 @@ const Medical3DCanvas = ({ onGoHome }) => {
         setShowToolsPanel={setShowToolsPanel}
         onImportClick={() => fileInputRef.current.click()}
         isImporting={isImporting}
+        readOnly={readOnly}
         onExportStl={exportCurrentModelStl}
         onExportObj={exportCurrentModelObj}
         onExportPng={exportScreenshot}
-        onExportReport={exportReportHtml}
+        onExportReportHtml={exportReportHtml}
+        onExportReportPdf={exportReportPdf}
         onGoHome={onGoHome}
+        isCompact={isMobileViewport}
+        showSceneSelector={false}
       />
 
       <SlicerPanel
@@ -2022,10 +2580,12 @@ const Medical3DCanvas = ({ onGoHome }) => {
         cutApplied={cutApplied}
         hasImportedModel={Boolean(persistentModelRef.current)}
         resetCut={resetCut}
+        isMobile={isMobileViewport}
+        isTablet={isTabletViewport}
       />
 
       <ToolsPanel
-        show={showToolsPanel}
+        show={readOnly ? false : showToolsPanel}
         activeTheme={activeTheme}
         theme={theme}
         setShow={setShowToolsPanel}
@@ -2042,7 +2602,8 @@ const Medical3DCanvas = ({ onGoHome }) => {
         onExportStl={exportCurrentModelStl}
         onExportObj={exportCurrentModelObj}
         onExportPng={exportScreenshot}
-        onExportReport={exportReportHtml}
+        onExportReportHtml={exportReportHtml}
+        onExportReportPdf={exportReportPdf}
         includeOverlaysInScreenshot={includeOverlaysInScreenshot}
         setIncludeOverlaysInScreenshot={setIncludeOverlaysInScreenshot}
         activeScene={activeScene}
@@ -2112,6 +2673,8 @@ const Medical3DCanvas = ({ onGoHome }) => {
         onRedoTrim={redoTrim}
         trimHistoryDepth={trimHistoryDepth}
         trimRedoDepth={trimRedoDepth}
+        isMobile={isMobileViewport}
+        isTablet={isTabletViewport}
       />
 
       <ModelInfoPanel
@@ -2120,34 +2683,103 @@ const Medical3DCanvas = ({ onGoHome }) => {
         activeTheme={activeTheme}
         theme={theme}
         showSlicerPanel={showSlicerPanel}
-        modelMeta={modelMeta}
+        modelMeta={resolvedModelMeta}
+        readOnly={readOnly}
+        unitOptions={SPATIAL_UNIT_OPTIONS}
+        selectedUnit={resolvedModelMeta?.sourceUnit ?? null}
+        calibrationStatus={resolvedModelMeta?.calibrationStatus ?? null}
+        onUnitChange={(nextUnit) => {
+          const option = getUnitOption(nextUnit);
+          applySpatialCalibration({
+            sourceUnit: option.value,
+            unitScaleToMm: option.unitScaleToMm,
+            status: 'confirmed'
+          });
+        }}
+        spatialOrientation={resolvedSpatialOrientation}
+        orientationOptions={ORIENTATION_DIRECTION_OPTIONS}
+        orientationIsValid={isSpatialOrientationValid(resolvedSpatialOrientation)}
+        onOrientationChange={updateSpatialOrientationDraft}
+        onConfirmOrientation={confirmSpatialOrientation}
+        onResetOrientation={resetSpatialOrientation}
+        isMobile={isMobileViewport}
+        isTablet={isTabletViewport}
       />
 
-      <div
-        style={{
-          position: 'absolute',
-          right: '14px',
-          bottom: '52px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '7px 10px',
-          borderRadius: '999px',
-          background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.86)' : 'rgba(16, 20, 33, 0.78)',
-          border: `1px solid ${activeTheme === 1 ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)'}`,
-          color: activeTheme === 1 ? '#1f2a3a' : '#d8deec',
-          fontSize: '11px',
-          fontWeight: 700,
-          letterSpacing: '0.25px',
-          zIndex: 115,
-          pointerEvents: 'none'
-        }}
-      >
-        <img src={medvizLogo} alt="MedViz" style={{ width: '15px', height: '15px', objectFit: 'contain', opacity: 0.95 }} />
-        <span>MedViz Web Editor</span>
-      </div>
+      {persistentModelRef.current ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: isMobileViewport ? '118px' : '78px',
+            left: '16px',
+            minWidth: isMobileViewport ? 'auto' : '220px',
+            maxWidth: isMobileViewport ? 'calc(100vw - 32px)' : '280px',
+            padding: '10px 12px',
+            borderRadius: '14px',
+            background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.92)' : 'rgba(12, 20, 32, 0.84)',
+            border: `1px solid ${activeTheme === 1 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)'}`,
+            color: activeTheme === 1 ? '#1f2a3a' : '#d8deec',
+            fontSize: '11px',
+            lineHeight: 1.5,
+            zIndex: 118,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div style={{ fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7 }}>
+            Orientation
+          </div>
+          {orientationAxisSummary.status === 'confirmed' ? (
+            <>
+              {orientationAxisSummary.axes.map((axisInfo) => (
+                <div key={axisInfo.axis}>
+                  <strong>{axisInfo.axis}:</strong> +{axisInfo.positive.shortLabel} / -{axisInfo.negative.shortLabel}
+                </div>
+              ))}
+            </>
+          ) : (
+            <div style={{ opacity: 0.8 }}>
+              Anatomical orientation is not confirmed yet. Confirm +X/+Y/+Z in Model Info before clinical review.
+            </div>
+          )}
+        </div>
+      ) : null}
 
-      <StatusBar activeTheme={activeTheme} sceneName={sceneNames[activeScene]} activeTool={activeTool} fps={fps} />
+      {!isMobileViewport ? (
+        <div
+          style={{
+            position: 'absolute',
+            right: '14px',
+            bottom: '52px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '7px 10px',
+            borderRadius: '999px',
+            background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.86)' : 'rgba(16, 20, 33, 0.78)',
+            border: `1px solid ${activeTheme === 1 ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)'}`,
+            color: activeTheme === 1 ? '#1f2a3a' : '#d8deec',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.25px',
+            zIndex: 115,
+            pointerEvents: 'none'
+          }}
+        >
+          <img src={medvizLogo} alt="MedViz" style={{ width: '15px', height: '15px', objectFit: 'contain', opacity: 0.95 }} />
+          <span>MedViz 3D Review</span>
+        </div>
+      ) : null}
+
+      <StatusBar
+        activeTheme={activeTheme}
+        sceneName={sceneNames[activeScene]}
+        activeTool={activeTool}
+        fps={fps}
+        sourceUnit={resolvedModelMeta?.sourceUnit ?? null}
+        calibrationStatus={resolvedModelMeta?.calibrationStatus ?? null}
+        orientationStatus={resolvedSpatialOrientation.status}
+        isCompact={isMobileViewport}
+      />
       <ToastStack toasts={toasts} />
     </div>
   );

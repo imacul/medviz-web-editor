@@ -1,7 +1,7 @@
 export const SCENE_NAMES = [
-  'DNA Helix',
-  'Heart Beat',
-  'Neural Network',
-  'Cell Division',
-  'Imported Model'
+  'Clinical Demo',
+  'Clinical Demo',
+  'Clinical Demo',
+  'Clinical Demo',
+  'Patient Model'
 ];

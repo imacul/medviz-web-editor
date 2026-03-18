@@ -77,6 +77,51 @@
 }
 .lp__nav-links a:hover { color: var(--cyan); }
 
+.lp__nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lp__nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(79,174,255,.08);
+  color: var(--text-hi);
+  cursor: pointer;
+  transition: all .2s;
+}
+.lp__nav-toggle:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.lp__mobile-menu {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 5%;
+  background: rgba(6,15,26,.98);
+  border-bottom: 1px solid var(--border);
+}
+.lp__mobile-menu a {
+  color: var(--text-mid);
+  text-decoration: none;
+  font-size: .95rem;
+  padding: 10px 0;
+}
+.lp__mobile-menu a:hover { color: var(--cyan); }
+
 /* ── BUTTONS ── */
 .lp__btn {
   display: inline-flex;
@@ -242,6 +287,7 @@
 
 /* ── SECTION COMMON ── */
 .lp section { position: relative; z-index: 1; }
+.lp section[id] { scroll-margin-top: 88px; }
 
 .lp__inner {
   max-width: 1100px;
@@ -347,6 +393,31 @@
 }
 .lp__step h4 { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
 .lp__step p  { font-size: .85rem; color: var(--text-mid); }
+
+/* ── TRUST BAND ── */
+.lp__trust-band {
+  background: rgba(101,255,191,.04);
+  border-top: 1px solid rgba(101,255,191,.15);
+  border-bottom: 1px solid rgba(101,255,191,.15);
+  position: relative;
+  z-index: 1;
+}
+.lp__trust-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 18px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+.lp__trust-inner p {
+  font-size: .88rem;
+  color: var(--green);
+  font-weight: 500;
+  line-height: 1.5;
+}
 
 /* ── SCREENSHOTS ── */
 .lp__screenshots-bg { background: var(--bg-dark); }
@@ -531,6 +602,9 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 700px) {
   .lp__nav-links { display: none; }
+  .lp__nav-actions { display: none; }
+  .lp__nav-toggle { display: inline-flex; }
+  .lp__mobile-menu { display: flex; }
   .lp__steps::before { display: none; }
   .lp__cta-inner { flex-direction: column; text-align: center; }
   .lp__footer { flex-direction: column; align-items: flex-start; }
