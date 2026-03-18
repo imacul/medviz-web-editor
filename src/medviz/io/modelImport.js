@@ -48,6 +48,11 @@ function normalizeGeometry(geometry) {
   result.computeVertexNormals();
 
   const indexed = toIndexedGeometry(result);
+  indexed.userData = {
+    ...indexed.userData,
+    normalizationScale: safeScale,
+    sourceMaxDimension: maxDim
+  };
   result.dispose();
   return indexed;
 }
@@ -98,7 +103,9 @@ function getModelMeta(geometry, file) {
     fileSizeBytes: file.size,
     vertices,
     triangles,
-    bounds
+    bounds,
+    normalizationScale: geometry.userData?.normalizationScale ?? 1,
+    sourceMaxDimension: geometry.userData?.sourceMaxDimension ?? null
   };
 }
 

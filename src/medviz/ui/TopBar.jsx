@@ -28,7 +28,8 @@ const TopBar = ({
   onExportStl,
   onExportObj,
   onExportPng,
-  onExportReport
+  onExportReport,
+  onGoHome
 }) => {
   const palette = getUiPalette(activeTheme, theme);
   const [openMenu, setOpenMenu] = useState(null);
@@ -88,7 +89,11 @@ const TopBar = ({
         zIndex: 300
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+      <div
+        onClick={onGoHome}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', cursor: onGoHome ? 'pointer' : 'default' }}
+        title="Back to home"
+      >
         <img src={medvizLogo} alt="MedViz logo" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
           <div style={{ fontSize: '18px', fontWeight: 800, color: palette.text, letterSpacing: '0.3px' }}>MedViz</div>

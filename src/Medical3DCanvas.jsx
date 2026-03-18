@@ -27,7 +27,32 @@ import ModelInfoPanel from './medviz/ui/ModelInfoPanel';
 import StatusBar from './medviz/ui/StatusBar';
 import ToastStack from './medviz/ui/ToastStack';
 
-const Medical3DCanvas = () => {
+const SEGMENT_GROUPS = [
+  { id: 0, label: 'Base', color: 0xb8c2cc },
+  { id: 1, label: 'Blue', color: 0x5aa9ff },
+  { id: 2, label: 'Yellow', color: 0xffd166 },
+  { id: 3, label: 'Purple', color: 0x7f5af0 },
+  { id: 4, label: 'Green', color: 0x4cd08a }
+];
+
+const SEGMENT_GROUP_LOOKUP = new Map(
+  SEGMENT_GROUPS.map((group) => [group.id, { ...group, rgb: new THREE.Color(group.color) }])
+);
+// Adaptive subdivision: target ~480k output triangles max for smooth brush edges.
+// More levels = smoother paint boundary; stops when adding another level would exceed target.
+const SEGMENT_SUBDIVIDE_TARGET_OUTPUT = 1000000;
+const getSegmentSubdivisionLevel = (triCount) => {
+  if (triCount <= 0) return 0;
+  let level = 0;
+  let count = triCount;
+  while (level < 3 && count * 4 <= SEGMENT_SUBDIVIDE_TARGET_OUTPUT) {
+    count *= 4;
+    level += 1;
+  }
+  return level;
+};
+
+const Medical3DCanvas = ({ onGoHome }) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -70,10 +95,23 @@ const Medical3DCanvas = () => {
   const fpsRef = useRef({ frames: 0, last: performance.now(), value: 60 });
   const markerCounterRef = useRef(1);
   const idCounterRef = useRef(1);
+  const segmentPaintingRef = useRef(false);
+  const segmentLastPaintPointRef = useRef(null);
+  const segmentControlsWereEnabledRef = useRef(true);
+  const segmentOffsetPreviewMeshRef = useRef(null);
 
   const [activeTool, setActiveTool] = useState('slice');
   const [measurements, setMeasurements] = useState([]);
   const [markers, setMarkers] = useState([]);
+  const [segmentBrushRadius, setSegmentBrushRadius] = useState(0.08);
+  const [activeSegmentGroupId, setActiveSegmentGroupId] = useState(1);
+  const [segmentIsolateActive, setSegmentIsolateActive] = useState(false);
+  const [segmentBaseOffsetMm, setSegmentBaseOffsetMm] = useState(1);
+  const [segmentReliefClearanceByGroup, setSegmentReliefClearanceByGroup] = useState(() =>
+    Object.fromEntries(SEGMENT_GROUPS.map((group) => [group.id, 0]))
+  );
+  const [segmentOffsetPreviewActive, setSegmentOffsetPreviewActive] = useState(false);
+  const [segmentPreviewRevision, setSegmentPreviewRevision] = useState(0);
   const [shadowsEnabled, setShadowsEnabled] = useState(false);
   const [gridVisible, setGridVisible] = useState(true);
   const [axesVisible, setAxesVisible] = useState(true);
@@ -120,6 +158,7 @@ const Medical3DCanvas = () => {
     pushTrimHistory();
     mesh.geometry.dispose();
     mesh.geometry = nextGeometry;
+    updateSegmentMaterialState(mesh);
 
     if (Array.isArray(mesh.material)) {
       mesh.material.forEach((mat) => {
@@ -132,6 +171,7 @@ const Medical3DCanvas = () => {
     }
 
     setCutApplied(true);
+    queueSegmentPreviewRefresh();
   };
 
   // Reset to original geometry
@@ -141,6 +181,7 @@ const Medical3DCanvas = () => {
     const mesh = persistentModelRef.current;
     mesh.geometry.dispose();
     mesh.geometry = originalGeometryRef.current.clone();
+    updateSegmentMaterialState(mesh);
     
     // Remove clipping
     if (Array.isArray(mesh.material)) {
@@ -156,6 +197,7 @@ const Medical3DCanvas = () => {
     setCutApplied(false);
     setSlicingEnabled(false);
     clearTrimHistory();
+    queueSegmentPreviewRefresh();
   };
 
   const sceneNames = SCENE_NAMES;
@@ -184,6 +226,618 @@ const Medical3DCanvas = () => {
         z: ((bounds?.max.z ?? 0) - (bounds?.min.z ?? 0)).toFixed(2)
       }
     };
+  };
+
+  const getSegmentGroup = (groupId) => SEGMENT_GROUP_LOOKUP.get(groupId) ?? SEGMENT_GROUP_LOOKUP.get(0);
+
+  const getSegmentDisplayColor = (groupId) => {
+    if (!segmentIsolateActive) return getSegmentGroup(groupId).rgb;
+    if (groupId === activeSegmentGroupId) return getSegmentGroup(groupId).rgb;
+
+    if (groupId === 0) return new THREE.Color(0x242a31);
+    const base = getSegmentGroup(groupId).rgb.clone();
+    return base.lerp(new THREE.Color(0x111317), 0.8);
+  };
+
+  const subdivideNonIndexedGeometryForSegmentation = (sourceGeometry, levels = 1) => {
+    let geometry = sourceGeometry;
+
+    for (let level = 0; level < levels; level += 1) {
+      const positionAttr = geometry.getAttribute('position');
+      if (!positionAttr || positionAttr.count % 3 !== 0) break;
+      const normalAttr = geometry.getAttribute('normal');
+      const triCount = positionAttr.count / 3;
+      const nextVertexCount = triCount * 12; // 4 tris * 3 verts
+      const nextPositions = new Float32Array(nextVertexCount * 3);
+      const nextNormals = normalAttr ? new Float32Array(nextVertexCount * 3) : null;
+
+      const a = new THREE.Vector3();
+      const b = new THREE.Vector3();
+      const c = new THREE.Vector3();
+      const ab = new THREE.Vector3();
+      const bc = new THREE.Vector3();
+      const ca = new THREE.Vector3();
+      const na = new THREE.Vector3();
+      const nb = new THREE.Vector3();
+      const nc = new THREE.Vector3();
+      const nab = new THREE.Vector3();
+      const nbc = new THREE.Vector3();
+      const nca = new THREE.Vector3();
+
+      let outVertex = 0;
+      const pushVertex = (v, n) => {
+        const base = outVertex * 3;
+        nextPositions[base] = v.x;
+        nextPositions[base + 1] = v.y;
+        nextPositions[base + 2] = v.z;
+        if (nextNormals && n) {
+          nextNormals[base] = n.x;
+          nextNormals[base + 1] = n.y;
+          nextNormals[base + 2] = n.z;
+        }
+        outVertex += 1;
+      };
+      const pushTri = (v1, n1, v2, n2, v3, n3) => {
+        pushVertex(v1, n1);
+        pushVertex(v2, n2);
+        pushVertex(v3, n3);
+      };
+
+      for (let i = 0; i < positionAttr.count; i += 3) {
+        a.fromBufferAttribute(positionAttr, i);
+        b.fromBufferAttribute(positionAttr, i + 1);
+        c.fromBufferAttribute(positionAttr, i + 2);
+
+        ab.copy(a).add(b).multiplyScalar(0.5);
+        bc.copy(b).add(c).multiplyScalar(0.5);
+        ca.copy(c).add(a).multiplyScalar(0.5);
+
+        if (normalAttr) {
+          na.fromBufferAttribute(normalAttr, i);
+          nb.fromBufferAttribute(normalAttr, i + 1);
+          nc.fromBufferAttribute(normalAttr, i + 2);
+          nab.copy(na).add(nb).normalize();
+          nbc.copy(nb).add(nc).normalize();
+          nca.copy(nc).add(na).normalize();
+
+          pushTri(a, na, ab, nab, ca, nca);
+          pushTri(ab, nab, b, nb, bc, nbc);
+          pushTri(ca, nca, bc, nbc, c, nc);
+          pushTri(ab, nab, bc, nbc, ca, nca);
+        } else {
+          pushTri(a, null, ab, null, ca, null);
+          pushTri(ab, null, b, null, bc, null);
+          pushTri(ca, null, bc, null, c, null);
+          pushTri(ab, null, bc, null, ca, null);
+        }
+      }
+
+      const nextGeometry = new THREE.BufferGeometry();
+      nextGeometry.setAttribute('position', new THREE.Float32BufferAttribute(nextPositions, 3));
+      if (nextNormals) {
+        nextGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(nextNormals, 3));
+      } else {
+        nextGeometry.computeVertexNormals();
+      }
+      nextGeometry.computeBoundingBox();
+      nextGeometry.computeBoundingSphere();
+
+      if (geometry !== sourceGeometry) {
+        geometry.dispose();
+      }
+      geometry = nextGeometry;
+    }
+
+    return geometry;
+  };
+
+  const updateSegmentMaterialState = (mesh = persistentModelRef.current) => {
+    if (!mesh || Array.isArray(mesh.material) || !mesh.material) return;
+    if (mesh.material.type === 'MeshNormalMaterial') return;
+
+    if (mesh.userData.baseSurfaceColorHex == null && mesh.material.color?.getHex) {
+      mesh.userData.baseSurfaceColorHex = mesh.material.color.getHex();
+    }
+
+    const hasColors = Boolean(mesh.geometry?.getAttribute?.('color'));
+    if ('vertexColors' in mesh.material) {
+      mesh.material.vertexColors = hasColors;
+    }
+    if (mesh.material.color?.setHex) {
+      mesh.material.color.setHex(hasColors ? 0xffffff : mesh.userData.baseSurfaceColorHex ?? 0xb8c2cc);
+    }
+    mesh.material.needsUpdate = true;
+  };
+
+  const refreshSegmentationColors = (mesh = persistentModelRef.current) => {
+    if (!mesh?.geometry) return;
+    const geometry = mesh.geometry;
+    const colorAttr = geometry.getAttribute('color');
+    const vertexIds = geometry.userData.segmentVertexGroupIds;
+    if (!colorAttr || !(vertexIds instanceof Uint8Array)) {
+      updateSegmentMaterialState(mesh);
+      return;
+    }
+
+    const colorArray = colorAttr.array;
+    const vertexCount = geometry.getAttribute('position')?.count ?? 0;
+    const count = Math.min(vertexCount, vertexIds.length);
+    for (let i = 0; i < count; i += 1) {
+      const color = getSegmentDisplayColor(vertexIds[i]);
+      const j = i * 3;
+      colorArray[j] = color.r;
+      colorArray[j + 1] = color.g;
+      colorArray[j + 2] = color.b;
+    }
+    colorAttr.needsUpdate = true;
+    updateSegmentMaterialState(mesh);
+  };
+
+  const queueSegmentPreviewRefresh = () => {
+    setSegmentPreviewRevision((prev) => prev + 1);
+  };
+
+  const setSegmentReliefClearance = (groupId, value) => {
+    const nextValue = Number.isFinite(value) ? Math.max(0, Math.min(250, value)) : 0;
+    setSegmentReliefClearanceByGroup((prev) => ({
+      ...prev,
+      [groupId]: nextValue
+    }));
+  };
+
+  const removeSegmentOffsetPreview = () => {
+    const previewMesh = segmentOffsetPreviewMeshRef.current;
+    if (!previewMesh) return;
+
+    previewMesh.parent?.remove(previewMesh);
+    previewMesh.geometry?.dispose?.();
+    if (Array.isArray(previewMesh.material)) {
+      previewMesh.material.forEach((mat) => mat.dispose?.());
+    } else {
+      previewMesh.material?.dispose?.();
+    }
+    segmentOffsetPreviewMeshRef.current = null;
+  };
+
+  const getSegmentPreviewMmToScene = (geometry) => {
+    const normScale = Number(modelMeta?.normalizationScale);
+    const sourceMaxDim = Number(modelMeta?.sourceMaxDimension);
+
+    if (!Number.isFinite(normScale) || normScale <= 0) {
+      return 0.02;
+    }
+
+    // Heuristic unit inference for scans/imports without unit metadata.
+    // Typical orthosis scans are ~100-350 mm. If source dimensions are small,
+    // they are commonly stored in meters (or cm), not mm.
+    let unitDivisor = 1; // source units are mm
+    if (Number.isFinite(sourceMaxDim) && sourceMaxDim > 0) {
+      if (sourceMaxDim <= 5) {
+        unitDivisor = 1000; // meters -> mm
+      } else if (sourceMaxDim <= 50) {
+        unitDivisor = 10; // cm -> mm
+      } else {
+        unitDivisor = 1; // likely mm
+      }
+    }
+
+    return normScale / unitDivisor;
+  };
+
+  const ensureSegmentOffsetPreview = () => {
+    const hostMesh = persistentModelRef.current;
+    if (!hostMesh?.geometry) return;
+
+    const sourceGeometry = ensureSegmentPaintGeometry(hostMesh);
+    if (!sourceGeometry?.getAttribute('position')) return;
+
+    const previewGeometry = sourceGeometry.clone();
+    const positionAttr = previewGeometry.getAttribute('position');
+    let normalAttr = previewGeometry.getAttribute('normal');
+    if (!normalAttr) {
+      previewGeometry.computeVertexNormals();
+      normalAttr = previewGeometry.getAttribute('normal');
+    }
+
+    const sourceFaceIds = sourceGeometry.userData.segmentFaceGroupIds;
+    const faceIds =
+      sourceFaceIds instanceof Uint8Array
+        ? sourceFaceIds
+        : new Uint8Array(Math.floor(positionAttr.count / 3));
+
+    const posArray = positionAttr.array;
+    const normalArray = normalAttr?.array;
+    const bbox = sourceGeometry.boundingBox;
+    const center = bbox
+      ? new THREE.Vector3(
+          (bbox.min.x + bbox.max.x) * 0.5,
+          (bbox.min.y + bbox.max.y) * 0.5,
+          (bbox.min.z + bbox.max.z) * 0.5
+        )
+      : new THREE.Vector3(0, 0, 0);
+    const mmToScene = getSegmentPreviewMmToScene(sourceGeometry);
+    if (!sourceGeometry.boundingBox) {
+      sourceGeometry.computeBoundingBox();
+    }
+    const sourceBounds = sourceGeometry.boundingBox;
+    const maxDimScene = sourceBounds
+      ? Math.max(
+          sourceBounds.max.x - sourceBounds.min.x,
+          sourceBounds.max.y - sourceBounds.min.y,
+          sourceBounds.max.z - sourceBounds.min.z
+        )
+      : 5;
+    const maxSafeOffset = Math.max(0.03, maxDimScene * 0.07);
+
+    for (let i = 0, faceIndex = 0; i < positionAttr.count; i += 3, faceIndex += 1) {
+      const groupId = faceIds[faceIndex] ?? 0;
+      const totalOffsetMm =
+        Math.max(0, segmentBaseOffsetMm) + Math.max(0, Number(segmentReliefClearanceByGroup[groupId] ?? 0));
+      const offset = Math.min(totalOffsetMm * mmToScene, maxSafeOffset);
+      if (offset === 0) continue;
+
+      for (let v = 0; v < 3; v += 1) {
+        const j = (i + v) * 3;
+        let nx = normalArray[j];
+        let ny = normalArray[j + 1];
+        let nz = normalArray[j + 2];
+
+        // Keep offset direction outward for meshes with mixed normal orientation.
+        const vx = posArray[j] - center.x;
+        const vy = posArray[j + 1] - center.y;
+        const vz = posArray[j + 2] - center.z;
+        if (vx * nx + vy * ny + vz * nz < 0) {
+          nx = -nx;
+          ny = -ny;
+          nz = -nz;
+        }
+
+        posArray[j] += nx * offset;
+        posArray[j + 1] += ny * offset;
+        posArray[j + 2] += nz * offset;
+      }
+    }
+
+    positionAttr.needsUpdate = true;
+    previewGeometry.computeVertexNormals();
+    previewGeometry.computeBoundingBox();
+    previewGeometry.computeBoundingSphere();
+
+    let previewMesh = segmentOffsetPreviewMeshRef.current;
+    const hasSegmentColors = Boolean(previewGeometry.getAttribute('color'));
+    if (!previewMesh) {
+      const previewMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf0f5ff,
+        metalness: 0.05,
+        roughness: 0.4,
+        vertexColors: hasSegmentColors,
+        transparent: false,
+        opacity: 1,
+        depthWrite: true,
+        side: THREE.FrontSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      });
+      previewMesh = new THREE.Mesh(previewGeometry, previewMaterial);
+      previewMesh.name = 'segment-offset-preview';
+      previewMesh.userData.isSegmentOffsetPreview = true;
+      previewMesh.castShadow = false;
+      previewMesh.receiveShadow = false;
+      previewMesh.renderOrder = 12;
+      hostMesh.add(previewMesh);
+      segmentOffsetPreviewMeshRef.current = previewMesh;
+    } else {
+      previewMesh.parent?.remove(previewMesh);
+      previewMesh.geometry?.dispose?.();
+      previewMesh.geometry = previewGeometry;
+      hostMesh.add(previewMesh);
+    }
+
+    const hostMaterial = Array.isArray(hostMesh.material) ? hostMesh.material[0] : hostMesh.material;
+    const previewMaterial = Array.isArray(previewMesh.material) ? previewMesh.material[0] : previewMesh.material;
+    if (hostMaterial && previewMaterial) {
+      previewMaterial.vertexColors = hasSegmentColors;
+      previewMaterial.clippingPlanes = hostMaterial.clippingPlanes ?? [];
+      previewMaterial.clipShadows = Boolean(hostMaterial.clipShadows);
+      previewMaterial.needsUpdate = true;
+    }
+  };
+
+  const ensureSegmentPaintGeometry = (mesh = persistentModelRef.current) => {
+    if (!mesh?.geometry) return null;
+    const geometry = mesh.geometry;
+    if (!geometry.index && geometry.userData.segmentPaintPrepared) return geometry;
+
+    const baseNonIndexed = geometry.index ? geometry.toNonIndexed() : geometry;
+    let nextGeometry = baseNonIndexed;
+    const triCount = Math.floor((baseNonIndexed.getAttribute('position')?.count ?? 0) / 3);
+    const subdivLevel = getSegmentSubdivisionLevel(triCount);
+    const canSubdivide = subdivLevel > 0;
+    if (!canSubdivide && triCount > 0 && !mesh.userData.segmentSubdivisionWarned) {
+      mesh.userData.segmentSubdivisionWarned = true;
+      pushToast('High-precision segment paint skipped on very dense mesh to preserve performance.');
+    }
+
+    if (canSubdivide) {
+      nextGeometry = subdivideNonIndexedGeometryForSegmentation(baseNonIndexed, subdivLevel);
+      if (nextGeometry !== baseNonIndexed) {
+        baseNonIndexed.dispose();
+      }
+    }
+
+    nextGeometry.computeVertexNormals();
+    nextGeometry.computeBoundingBox();
+    if (!nextGeometry.boundingSphere) {
+      nextGeometry.computeBoundingSphere();
+    }
+    nextGeometry.userData.segmentPaintPrepared = true;
+    nextGeometry.userData.segmentPaintSubdivisionLevel = canSubdivide ? subdivLevel : 0;
+
+    if (mesh.geometry !== nextGeometry) {
+      if (mesh.geometry && mesh.geometry !== geometry) {
+        mesh.geometry.dispose();
+      } else if (geometry !== nextGeometry) {
+        geometry.dispose();
+      }
+      mesh.geometry = nextGeometry;
+    } else if (geometry.index) {
+      geometry.dispose();
+    }
+
+    return mesh.geometry;
+  };
+
+  const ensureSegmentColorAttribute = (mesh = persistentModelRef.current) => {
+    if (!mesh?.geometry) return null;
+
+    const geometry = ensureSegmentPaintGeometry(mesh);
+    const positionAttr = geometry.getAttribute('position');
+    if (!positionAttr) return null;
+
+    let colorAttr = geometry.getAttribute('color');
+    const expectedCount = positionAttr.count;
+
+    if (!colorAttr || colorAttr.count !== expectedCount) {
+      const base = getSegmentGroup(0).rgb;
+      const colors = new Float32Array(expectedCount * 3);
+      for (let i = 0; i < expectedCount; i += 1) {
+        const j = i * 3;
+        colors[j] = base.r;
+        colors[j + 1] = base.g;
+        colors[j + 2] = base.b;
+      }
+      colorAttr = new THREE.Float32BufferAttribute(colors, 3);
+      colorAttr.setUsage(THREE.DynamicDrawUsage);
+      geometry.setAttribute('color', colorAttr);
+    }
+
+    // Per-vertex group IDs — drives smooth color interpolation at stroke edges
+    const vids = geometry.userData.segmentVertexGroupIds;
+    if (!(vids instanceof Uint8Array) || vids.length !== expectedCount) {
+      geometry.userData.segmentVertexGroupIds = new Uint8Array(expectedCount);
+    }
+
+    // Per-face group IDs — used only for relief offset mapping
+    const faceCount = Math.floor(expectedCount / 3);
+    const ids = geometry.userData.segmentFaceGroupIds;
+    if (!(ids instanceof Uint8Array) || ids.length !== faceCount) {
+      geometry.userData.segmentFaceGroupIds = new Uint8Array(faceCount);
+    }
+
+    if (!geometry.userData.segmentVertexWeld || geometry.userData.segmentVertexWeld.vertexCount !== expectedCount) {
+      const posArray = positionAttr.array;
+      const leaderByKey = new Map();
+      const membersTemp = new Array(expectedCount);
+      const keyScale = 100000; // quantization for matching duplicated non-indexed vertices
+
+      for (let i = 0; i < expectedCount; i += 1) {
+        const j = i * 3;
+        const kx = Math.round(posArray[j] * keyScale);
+        const ky = Math.round(posArray[j + 1] * keyScale);
+        const kz = Math.round(posArray[j + 2] * keyScale);
+        const key = `${kx}|${ky}|${kz}`;
+
+        const leader = leaderByKey.get(key);
+        if (leader == null) {
+          leaderByKey.set(key, i);
+          membersTemp[i] = [i];
+        } else {
+          membersTemp[leader].push(i);
+        }
+      }
+
+      const membersByLeader = new Array(expectedCount);
+      for (let i = 0; i < expectedCount; i += 1) {
+        const members = membersTemp[i];
+        if (!members) continue;
+        membersByLeader[i] = members.length === 1 ? members : Uint32Array.from(members);
+      }
+
+      geometry.userData.segmentVertexWeld = {
+        vertexCount: expectedCount,
+        membersByLeader
+      };
+    }
+
+    updateSegmentMaterialState(mesh);
+    return geometry.getAttribute('color');
+  };
+
+  const clearSegmentation = (silent = false) => {
+    const mesh = persistentModelRef.current;
+    if (!mesh?.geometry) {
+      if (!silent) pushToast('Import a model first.');
+      return;
+    }
+
+    const geometry = mesh.geometry;
+    if (!geometry.getAttribute('color')) {
+      if (!silent) pushToast('No segmentation paint to clear.');
+      return;
+    }
+
+    geometry.deleteAttribute('color');
+    delete geometry.userData.segmentFaceGroupIds;
+    delete geometry.userData.segmentVertexGroupIds;
+    updateSegmentMaterialState(mesh);
+    queueSegmentPreviewRefresh();
+    if (!silent) pushToast('Segmentation cleared.');
+  };
+
+  const getPointerIntersection = (event, importedOnly = false) => {
+    if (!rendererRef.current || !cameraRef.current) return null;
+
+    const dom = rendererRef.current.domElement;
+    const rect = dom.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycasterRef.current.setFromCamera({ x, y }, cameraRef.current);
+
+    let meshes = [];
+    if (importedOnly) {
+      const mesh = persistentModelRef.current;
+      if (!mesh?.visible) return null;
+      meshes = [mesh];
+    } else {
+      objectsRef.current.forEach((root) => {
+        root.traverse((child) => {
+          if (child.isMesh && child.visible) meshes.push(child);
+        });
+      });
+    }
+
+    if (meshes.length === 0) return null;
+    const intersections = raycasterRef.current.intersectObjects(meshes, true);
+    return intersections.find((hit) => !hit.object?.userData?.isSegmentOffsetPreview) ?? null;
+  };
+
+  const paintSegmentationStroke = (mesh, fromPoint, toPoint) => {
+    const colorAttr = ensureSegmentColorAttribute(mesh);
+    const geometry = mesh.geometry;
+    const positionAttr = geometry.getAttribute('position');
+    if (!colorAttr || !positionAttr) return 0;
+
+    const displayColor = getSegmentDisplayColor(activeSegmentGroupId);
+    const brushRadius = segmentBrushRadius * 1.08;
+    const radiusSq = brushRadius * brushRadius;
+    const posArray = positionAttr.array;
+    const colorArray = colorAttr.array;
+    const vertexIds = geometry.userData.segmentVertexGroupIds;
+    const faceIds = geometry.userData.segmentFaceGroupIds;
+    const weld = geometry.userData.segmentVertexWeld;
+    const membersByLeader = weld?.membersByLeader;
+    const touchedFaces = new Set();
+    const dxLine = toPoint.x - fromPoint.x;
+    const dyLine = toPoint.y - fromPoint.y;
+    const dzLine = toPoint.z - fromPoint.z;
+    const lineLenSq = dxLine * dxLine + dyLine * dyLine + dzLine * dzLine;
+
+    const getDistanceSqToStroke = (px, py, pz) => {
+      if (lineLenSq < 1e-12) {
+        const dx = px - fromPoint.x;
+        const dy = py - fromPoint.y;
+        const dz = pz - fromPoint.z;
+        return dx * dx + dy * dy + dz * dz;
+      }
+      const vx = px - fromPoint.x;
+      const vy = py - fromPoint.y;
+      const vz = pz - fromPoint.z;
+      let t = (vx * dxLine + vy * dyLine + vz * dzLine) / lineLenSq;
+      if (t < 0) t = 0;
+      if (t > 1) t = 1;
+      const cx = fromPoint.x + dxLine * t;
+      const cy = fromPoint.y + dyLine * t;
+      const cz = fromPoint.z + dzLine * t;
+      const dx = px - cx;
+      const dy = py - cy;
+      const dz = pz - cz;
+      return dx * dx + dy * dy + dz * dz;
+    };
+
+    // Vertex pass: use welded duplicate vertices so adjacent non-indexed faces paint consistently.
+    let changed = 0;
+    for (let i = 0; i < positionAttr.count; i += 1) {
+      const members = membersByLeader?.[i];
+      if (!members) continue; // paint once per welded leader vertex only
+
+      const j = i * 3;
+      if (getDistanceSqToStroke(posArray[j], posArray[j + 1], posArray[j + 2]) > radiusSq) continue;
+
+      for (let m = 0; m < members.length; m += 1) {
+        const vertexIndex = members[m];
+        if (vertexIds[vertexIndex] !== activeSegmentGroupId) {
+          vertexIds[vertexIndex] = activeSegmentGroupId;
+          const mj = vertexIndex * 3;
+          colorArray[mj] = displayColor.r;
+          colorArray[mj + 1] = displayColor.g;
+          colorArray[mj + 2] = displayColor.b;
+          changed += 1;
+        }
+        touchedFaces.add(Math.floor(vertexIndex / 3));
+      }
+    }
+
+    if (faceIds && touchedFaces.size > 0) {
+      for (const faceIndex of touchedFaces) {
+        if (faceIndex >= 0 && faceIndex < faceIds.length) {
+          faceIds[faceIndex] = activeSegmentGroupId;
+          const base = faceIndex * 9;
+          const v0 = Math.floor(base / 3);
+          const v1 = v0 + 1;
+          const v2 = v0 + 2;
+          vertexIds[v0] = activeSegmentGroupId;
+          vertexIds[v1] = activeSegmentGroupId;
+          vertexIds[v2] = activeSegmentGroupId;
+          colorArray[base] = displayColor.r;
+          colorArray[base + 1] = displayColor.g;
+          colorArray[base + 2] = displayColor.b;
+          colorArray[base + 3] = displayColor.r;
+          colorArray[base + 4] = displayColor.g;
+          colorArray[base + 5] = displayColor.b;
+          colorArray[base + 6] = displayColor.r;
+          colorArray[base + 7] = displayColor.g;
+          colorArray[base + 8] = displayColor.b;
+        }
+      }
+    }
+
+    if (changed > 0) colorAttr.needsUpdate = true;
+    return changed;
+  };
+
+  const paintSegmentationAtPoint = (intersection) => {
+    const mesh = persistentModelRef.current;
+    if (!mesh?.geometry || !intersection?.point) return false;
+
+    const localPoint = mesh.worldToLocal(intersection.point.clone());
+    const lastPoint = segmentLastPaintPointRef.current;
+    const minAdvanceSq = Math.max(1e-6, (segmentBrushRadius * 0.015) ** 2);
+
+    if (!lastPoint) {
+      const changed = paintSegmentationStroke(mesh, localPoint, localPoint);
+      segmentLastPaintPointRef.current = localPoint.clone();
+      if (changed > 0) updateSegmentMaterialState(mesh);
+      return changed > 0;
+    }
+
+    const distance = lastPoint.distanceTo(localPoint);
+    if (distance * distance < minAdvanceSq) return false;
+
+    const changedTotal = paintSegmentationStroke(mesh, lastPoint, localPoint);
+
+    segmentLastPaintPointRef.current = localPoint.clone();
+    if (changedTotal > 0) {
+      updateSegmentMaterialState(mesh);
+    }
+    return changedTotal > 0;
+  };
+
+  const paintSegmentationFromEvent = (event) => {
+    if (activeScene !== 4 || !persistentModelRef.current) return false;
+    const intersection = getPointerIntersection(event, true);
+    if (!intersection) return false;
+    return paintSegmentationAtPoint(intersection);
   };
 
   const pushToast = (message) => {
@@ -396,8 +1050,9 @@ const Medical3DCanvas = () => {
     pushTrimHistory();
     mesh.geometry.dispose();
     mesh.geometry = nextGeometry;
-    mesh.material.needsUpdate = true;
+    updateSegmentMaterialState(mesh);
     setCutApplied(true);
+    queueSegmentPreviewRefresh();
     pushToast('Trim applied.');
   };
 
@@ -419,8 +1074,9 @@ const Medical3DCanvas = () => {
     setTrimRedoDepth(trimRedoRef.current.length);
     mesh.geometry.dispose();
     mesh.geometry = previous;
-    mesh.material.needsUpdate = true;
+    updateSegmentMaterialState(mesh);
     setCutApplied(true);
+    queueSegmentPreviewRefresh();
     pushToast('Trim undo applied.');
   };
 
@@ -436,8 +1092,9 @@ const Medical3DCanvas = () => {
     setTrimRedoDepth(trimRedoRef.current.length);
     mesh.geometry.dispose();
     mesh.geometry = next;
-    mesh.material.needsUpdate = true;
+    updateSegmentMaterialState(mesh);
     setCutApplied(true);
+    queueSegmentPreviewRefresh();
     pushToast('Trim redo applied.');
   };
 
@@ -640,6 +1297,7 @@ const Medical3DCanvas = () => {
       mesh.receiveShadow = true;
 
       if (persistentModelRef.current && persistentModelRef.current !== mesh) {
+        removeSegmentOffsetPreview();
         if (sceneRef.current) {
           sceneRef.current.remove(persistentModelRef.current);
         }
@@ -656,12 +1314,17 @@ const Medical3DCanvas = () => {
       setSlicingEnabled(false);
       clearMeasurements(true);
       clearMarkers(true);
+      segmentPaintingRef.current = false;
+      segmentLastPaintPointRef.current = null;
+      setSegmentOffsetPreviewActive(false);
       clearTrimHistory();
 
       persistentModelRef.current = mesh;
+      updateSegmentMaterialState(mesh);
       setImportedModel(mesh);
       setActiveScene(4);
       setModelMeta({ ...meta, extension });
+      queueSegmentPreviewRefresh();
       pushToast(`${extension.toUpperCase()} model imported.`);
     } catch (error) {
       console.error('Error loading model:', error);
@@ -755,42 +1418,130 @@ const Medical3DCanvas = () => {
     const dom = rendererRef.current.domElement;
 
     const handlePointerDown = (event) => {
+      if (event.button !== 0) return;
+
+      if (activeTool === 'segment') {
+        if (activeScene !== 4 || !persistentModelRef.current) {
+          pushToast('Import a model first.');
+          return;
+        }
+        const intersection = getPointerIntersection(event, true);
+        if (!intersection) {
+          pushToast('Click on the imported model surface.');
+          return;
+        }
+        paintSegmentationAtPoint(intersection);
+        segmentPaintingRef.current = true;
+        segmentControlsWereEnabledRef.current = controlsRef.current?.enabled ?? true;
+        if (dom.setPointerCapture && event.pointerId != null) {
+          try {
+            dom.setPointerCapture(event.pointerId);
+          } catch {
+            // Ignore browsers/platforms that reject capture for this pointer.
+          }
+        }
+        if (controlsRef.current) controlsRef.current.enabled = false;
+        return;
+      }
+
       if (activeTool !== 'measure' && activeTool !== 'annotate') return;
-      if (!sceneRef.current || !cameraRef.current) return;
 
-      const rect = dom.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycasterRef.current.setFromCamera({ x, y }, cameraRef.current);
-
-      const meshes = [];
-      objectsRef.current.forEach((root) => {
-        root.traverse((child) => {
-          if (child.isMesh && child.visible) meshes.push(child);
-        });
-      });
-      if (meshes.length === 0) return;
-
-      const intersections = raycasterRef.current.intersectObjects(meshes, true);
-      if (intersections.length === 0) {
+      const intersection = getPointerIntersection(event, false);
+      if (!intersection) {
         pushToast('Click on the model surface.');
         return;
       }
 
-      const hitPoint = intersections[0].point.clone();
+      const hitPoint = intersection.point.clone();
       if (activeTool === 'measure') addMeasurementPoint(hitPoint);
       if (activeTool === 'annotate') addMarkerAtPoint(hitPoint);
     };
 
+    const handlePointerMove = (event) => {
+      if (activeTool !== 'segment' || !segmentPaintingRef.current) return;
+      paintSegmentationFromEvent(event);
+    };
+
+    const stopSegmentPainting = (event) => {
+      if (!segmentPaintingRef.current) return;
+      segmentPaintingRef.current = false;
+      segmentLastPaintPointRef.current = null;
+      if (dom.releasePointerCapture && event?.pointerId != null) {
+        try {
+          if (dom.hasPointerCapture?.(event.pointerId)) {
+            dom.releasePointerCapture(event.pointerId);
+          }
+        } catch {
+          // Ignore capture release failures.
+        }
+      }
+      if (controlsRef.current) {
+        controlsRef.current.enabled = segmentControlsWereEnabledRef.current;
+      }
+      queueSegmentPreviewRefresh();
+    };
+
     dom.addEventListener('pointerdown', handlePointerDown);
-    return () => dom.removeEventListener('pointerdown', handlePointerDown);
-  }, [activeTool, activeScene, importedModel]);
+    dom.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', stopSegmentPainting);
+    window.addEventListener('pointercancel', stopSegmentPainting);
+    return () => {
+      dom.removeEventListener('pointerdown', handlePointerDown);
+      dom.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopSegmentPainting);
+      window.removeEventListener('pointercancel', stopSegmentPainting);
+      stopSegmentPainting();
+    };
+  }, [activeTool, activeScene, importedModel, segmentBrushRadius, activeSegmentGroupId]);
 
   useEffect(() => {
     if (!gridHelperRef.current || !axesHelperRef.current) return;
     gridHelperRef.current.visible = gridVisible;
     axesHelperRef.current.visible = axesVisible;
   }, [gridVisible, axesVisible]);
+
+  useEffect(() => {
+    if (activeTool !== 'segment') {
+      segmentPaintingRef.current = false;
+      segmentLastPaintPointRef.current = null;
+      if (controlsRef.current) {
+        controlsRef.current.enabled = segmentControlsWereEnabledRef.current;
+      }
+      return;
+    }
+
+    if (shadingMode !== 'solid') {
+      pushToast('Segmentation colors are visible in Solid shading mode.');
+    }
+  }, [activeTool, shadingMode]);
+
+  useEffect(() => {
+    refreshSegmentationColors();
+  }, [segmentIsolateActive, activeSegmentGroupId]);
+
+  useEffect(() => {
+    if (!segmentOffsetPreviewActive || activeScene !== 4 || !persistentModelRef.current) {
+      removeSegmentOffsetPreview();
+      return;
+    }
+
+    ensureSegmentOffsetPreview();
+    return () => {
+      // Keep preview across normal re-renders; cleanup handled by toggle/model changes.
+    };
+  }, [
+    segmentOffsetPreviewActive,
+    segmentBaseOffsetMm,
+    segmentReliefClearanceByGroup,
+    segmentIsolateActive,
+    activeSegmentGroupId,
+    activeScene,
+    importedModel,
+    modelMeta?.normalizationScale,
+    segmentPreviewRevision
+  ]);
+
+  useEffect(() => () => removeSegmentOffsetPreview(), []);
 
   useEffect(() => {
     if (!centerMarkerRef.current) return;
@@ -822,6 +1573,7 @@ const Medical3DCanvas = () => {
     const applyMaterialModes = (obj) => {
       obj.traverse((child) => {
         if (!child.isMesh || !child.material) return;
+        if (child.userData?.isSegmentOffsetPreview) return;
         if (Array.isArray(child.material)) return;
 
         if (shadingMode === 'normal') {
@@ -840,6 +1592,9 @@ const Medical3DCanvas = () => {
           child.material.wireframe = wireframeEnabled;
         } else {
           child.material.wireframe = wireframeEnabled;
+        }
+        if (child === persistentModelRef.current) {
+          updateSegmentMaterialState(child);
         }
         child.material.needsUpdate = true;
       });
@@ -1247,6 +2002,7 @@ const Medical3DCanvas = () => {
         onExportObj={exportCurrentModelObj}
         onExportPng={exportScreenshot}
         onExportReport={exportReportHtml}
+        onGoHome={onGoHome}
       />
 
       <SlicerPanel
@@ -1311,6 +2067,24 @@ const Medical3DCanvas = () => {
         onDeleteMarker={deleteMarker}
         onExportMarkers={exportMarkersJson}
         onClearMarkers={clearMarkers}
+        segmentGroupPalette={SEGMENT_GROUPS.map((group) => ({
+          id: group.id,
+          label: group.label,
+          color: `#${group.color.toString(16).padStart(6, '0')}`
+        }))}
+        activeSegmentGroupId={activeSegmentGroupId}
+        setActiveSegmentGroupId={setActiveSegmentGroupId}
+        segmentBrushRadius={segmentBrushRadius}
+        setSegmentBrushRadius={setSegmentBrushRadius}
+        segmentIsolateActive={segmentIsolateActive}
+        setSegmentIsolateActive={setSegmentIsolateActive}
+        segmentBaseOffsetMm={segmentBaseOffsetMm}
+        setSegmentBaseOffsetMm={setSegmentBaseOffsetMm}
+        segmentReliefClearanceByGroup={segmentReliefClearanceByGroup}
+        onSetSegmentReliefClearance={setSegmentReliefClearance}
+        segmentOffsetPreviewActive={segmentOffsetPreviewActive}
+        setSegmentOffsetPreviewActive={setSegmentOffsetPreviewActive}
+        onClearSegmentation={clearSegmentation}
         gridVisible={gridVisible}
         setGridVisible={setGridVisible}
         axesVisible={axesVisible}
@@ -1380,5 +2154,3 @@ const Medical3DCanvas = () => {
 };
 
 export default Medical3DCanvas;
-
-

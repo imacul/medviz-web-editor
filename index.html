@@ -3,13 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MedViz 3D</title>
+    <title>MedViz – Clinical 3D Editor</title>
+    <link rel="icon" type="image/x-icon" href="/assets/medviz.ico" />
     <style>
-      html, body, #root {
+      html, body {
         width: 100%;
         height: 100%;
         margin: 0;
         padding: 0;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+      /* Editor mode: lock scroll so the 3D canvas fills the screen */
+      body.editor-mode,
+      body.editor-mode #root {
         overflow: hidden;
       }
       * {
