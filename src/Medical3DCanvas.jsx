@@ -118,6 +118,7 @@ const Medical3DCanvas = ({
   const [showSlicerPanel, setShowSlicerPanel] = useState(false);
   const [showToolsPanel, setShowToolsPanel] = useState(false);
   const [showModelInfoPanel, setShowModelInfoPanel] = useState(getInitialViewportWidth() >= 768);
+  const [showOrientationCard, setShowOrientationCard] = useState(true);
   const [transformMode, setTransformMode] = useState('translate'); // 'translate' or 'rotate'
   const [gizmosEnabled, setGizmosEnabled] = useState(false);
   const [cutApplied, setCutApplied] = useState(false);
@@ -1415,6 +1416,27 @@ const Medical3DCanvas = ({
     }
   };
 
+  const confirmSpatialCalibration = () => {
+    const effectiveCalibration = getEffectiveSpatialCalibration();
+    if (!effectiveCalibration) {
+      return;
+    }
+
+    if (effectiveCalibration.status === 'confirmed') {
+      return;
+    }
+
+    applySpatialCalibration(
+      {
+        ...effectiveCalibration,
+        status: 'confirmed'
+      },
+      { silent: true }
+    );
+
+    pushToast(`Import units confirmed as ${effectiveCalibration.sourceUnit} for this review session.`);
+  };
+
   const updateSpatialOrientationDraft = (axisKey, direction) => {
     setSpatialOrientation((prev) => ({
       ...normalizeSpatialOrientation(prev),
@@ -2593,6 +2615,8 @@ const Medical3DCanvas = ({
         setShowSlicerPanel={setShowSlicerPanel}
         showModelInfoPanel={showModelInfoPanel}
         setShowModelInfoPanel={setShowModelInfoPanel}
+        showOrientationCard={showOrientationCard}
+        setShowOrientationCard={setShowOrientationCard}
         onResetCamera={resetCameraView}
         onShowHelp={() =>
           pushToast(
@@ -2696,6 +2720,7 @@ const Medical3DCanvas = ({
             status: 'confirmed'
           });
         }}
+        onConfirmUnit={confirmSpatialCalibration}
         spatialOrientation={resolvedSpatialOrientation}
         orientationOptions={ORIENTATION_DIRECTION_OPTIONS}
         orientationIsValid={isSpatialOrientationValid(resolvedSpatialOrientation)}
@@ -2706,7 +2731,7 @@ const Medical3DCanvas = ({
         isTablet={isTabletViewport}
       />
 
-      {persistentModelRef.current ? (
+      {persistentModelRef.current && showOrientationCard ? (
         <div
           style={{
             position: 'absolute',
@@ -2725,8 +2750,27 @@ const Medical3DCanvas = ({
             backdropFilter: 'blur(10px)',
           }}
         >
-          <div style={{ fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7 }}>
-            Orientation
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7 }}>
+              Orientation
+            </div>
+            <button
+              onClick={() => setShowOrientationCard(false)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: activeTheme === 1 ? '#5a6372' : '#9ca3af',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 700,
+                lineHeight: 1,
+                padding: 0
+              }}
+              aria-label="Hide orientation card"
+              title="Hide orientation card"
+            >
+              ×
+            </button>
           </div>
           {orientationAxisSummary.status === 'confirmed' ? (
             <>

@@ -17,6 +17,7 @@ const ModelInfoPanel = ({
   selectedUnit = null,
   calibrationStatus = null,
   onUnitChange,
+  onConfirmUnit,
   spatialOrientation = null,
   orientationOptions = [],
   orientationIsValid = false,
@@ -57,7 +58,7 @@ const ModelInfoPanel = ({
             <div style={{ marginBottom: '10px', color: palette.text }}>
               {calibrationStatus === 'confirmed'
                 ? 'Import units have been confirmed for this review session.'
-                : 'STL/OBJ/PLY units are inferred. Review the import size before using measurements clinically.'}
+                : 'Import units still need confirmation. Review the selected unit before using measurements clinically.'}
             </div>
           ) : null}
           {unitOptions.length > 0 ? (
@@ -96,8 +97,24 @@ const ModelInfoPanel = ({
                   </option>
                 ))}
               </select>
+              <div style={{ marginTop: '6px', color: palette.muted }}>
+                Confirm the selected import unit for this review session.
+              </div>
               <div style={{ marginTop: '6px' }}>
                 <strong>Status:</strong> {calibrationStatus === 'confirmed' ? 'Confirmed' : 'Inferred'}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button
+                  onClick={onConfirmUnit}
+                  disabled={readOnly || calibrationStatus === 'confirmed'}
+                  style={{
+                    ...getToolButtonStyle(false, palette),
+                    opacity: readOnly || calibrationStatus === 'confirmed' ? 0.5 : 1,
+                    cursor: readOnly || calibrationStatus === 'confirmed' ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {calibrationStatus === 'confirmed' ? 'Confirmed' : 'Confirm Units'}
+                </button>
               </div>
             </div>
           ) : null}

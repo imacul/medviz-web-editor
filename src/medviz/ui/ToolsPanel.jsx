@@ -18,6 +18,8 @@ const ToolsPanel = ({
   setShowSlicerPanel,
   showModelInfoPanel,
   setShowModelInfoPanel,
+  showOrientationCard,
+  setShowOrientationCard,
   onResetCamera,
   onShowHelp,
   onExportStl,
@@ -160,6 +162,12 @@ const ToolsPanel = ({
             style={getToolButtonStyle(showModelInfoPanel, palette)}
           >
             Model Info
+          </button>
+          <button
+            onClick={() => setShowOrientationCard(!showOrientationCard)}
+            style={getToolButtonStyle(showOrientationCard, palette)}
+          >
+            Orientation Card
           </button>
           <button onClick={onResetCamera} style={getToolButtonStyle(false, palette)}>
             Reset Camera

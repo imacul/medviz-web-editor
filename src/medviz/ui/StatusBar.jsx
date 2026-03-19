@@ -54,7 +54,7 @@ const StatusBar = ({
       <span><strong>Scene:</strong> {sceneName}</span>
       <span><strong>Tool:</strong> {TOOL_LABELS[activeTool] ?? activeTool}</span>
       {sourceUnit ? (
-        <span><strong>Units:</strong> {sourceUnit} {calibrationStatus === 'confirmed' ? '(confirmed)' : '(inferred)'}</span>
+        <span><strong>Units:</strong> {sourceUnit} {calibrationStatus === 'confirmed' ? '(confirmed)' : '(review pending)'}</span>
       ) : null}
       {orientationStatus ? (
         <span><strong>Orientation:</strong> {orientationStatus === 'confirmed' ? 'confirmed' : 'unconfirmed'}</span>

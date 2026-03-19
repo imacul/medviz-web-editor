@@ -45,6 +45,7 @@ interface EditorOverlayState {
   description: string;
   detail: string;
   progress: number | null;
+  variant?: 'blocking' | 'status';
 }
 
 const Medical3DCanvas = lazy(loadMedical3DCanvas);
@@ -132,6 +133,7 @@ export default function EditorPage() {
               description: 'Loading from browser storage.',
               detail: localRecord.modelFileName,
               progress: null,
+              variant: 'blocking',
             });
           }
 
@@ -146,6 +148,7 @@ export default function EditorPage() {
                 description: 'Loading from browser storage.',
                 detail: localRecord.modelFileName,
                 progress: 100,
+                variant: 'blocking',
               });
               setInitialModelSource(cachedFile);
             } else {
@@ -196,6 +199,7 @@ export default function EditorPage() {
             description: 'Checking for a local copy before downloading.',
             detail: fileName,
             progress: null,
+            variant: 'blocking',
           });
         }
 
@@ -208,6 +212,7 @@ export default function EditorPage() {
               description: 'Using the local copy for a faster start.',
               detail: fileName,
               progress: 100,
+              variant: 'blocking',
             });
             setInitialModelSource(cachedFile);
           }
@@ -232,6 +237,7 @@ export default function EditorPage() {
                   ? `${formatMegabytes(loaded)} MB of ${formatMegabytes(total)} MB`
                   : `${formatMegabytes(loaded)} MB downloaded`,
               progress: percent,
+              variant: 'blocking',
             });
           }
         );
@@ -246,6 +252,7 @@ export default function EditorPage() {
             description: 'Loading the model into 3D review.',
             detail: fileName,
             progress: 100,
+            variant: 'blocking',
           });
           setInitialModelSource(downloadedFile);
         }
@@ -268,6 +275,29 @@ export default function EditorPage() {
   }, [caseId]);
 
   const handleInitialModelStateChange = (state: InitialModelState) => {
+    if (state === 'importing') {
+      setOverlayState((current) => {
+        if (!current) {
+          return {
+            title: 'Preparing review workspace',
+            description: 'Finishing the 3D scene and review tools.',
+            detail: activeModelLabel ?? 'Patient model',
+            progress: null,
+            variant: 'status',
+          };
+        }
+
+        return {
+          title: 'Preparing review workspace',
+          description: 'Finishing the 3D scene and review tools.',
+          detail: current.detail,
+          progress: null,
+          variant: 'status',
+        };
+      });
+      return;
+    }
+
     if (state === 'ready') {
       setOverlayState(null);
       setErrorMessage(null);
@@ -340,6 +370,7 @@ export default function EditorPage() {
       description: 'Saving this file to the case so it opens directly in 3D review next time.',
       detail: 'Starting upload',
       progress: 0,
+      variant: 'status',
     });
 
     try {
@@ -353,6 +384,7 @@ export default function EditorPage() {
                 ? `${formatMegabytes(loaded)} MB of ${formatMegabytes(total)} MB`
                 : `${formatMegabytes(loaded)} MB uploaded`,
             progress: percent,
+            variant: 'status',
           });
         },
       });
@@ -363,6 +395,7 @@ export default function EditorPage() {
         description: 'Linking the imported file to this case.',
         detail: getCaseModelFileName(uploadResult.modelUrl),
         progress: 100,
+        variant: 'status',
       });
 
       const updatedCase = await updateCaseModelAssets(caseRecord.id, {
@@ -422,7 +455,19 @@ export default function EditorPage() {
     return null;
   }
 
-  const activeOverlay = saveState || overlayState;
+  const blockingOverlay =
+    saveState?.variant === 'blocking'
+      ? saveState
+      : overlayState?.variant === 'blocking'
+        ? overlayState
+        : null;
+
+  const statusOverlay =
+    saveState?.variant === 'status'
+      ? saveState
+      : overlayState?.variant === 'status'
+        ? overlayState
+        : null;
 
   const backToCasePath = caseRecord && !isLocalCaseId(caseRecord.id)
     ? `/cases/${caseRecord.id}`
@@ -477,7 +522,7 @@ export default function EditorPage() {
         </div>
       )}
 
-      {activeOverlay ? (
+      {blockingOverlay ? (
         <div className="pointer-events-none absolute inset-0 z-120 flex items-start justify-center bg-[rgba(6,15,26,0.32)] px-4 pt-24 sm:pt-28">
           <div className="w-full max-w-md rounded-3xl border border-medviz-line/80 bg-[linear-gradient(160deg,rgba(9,22,39,0.94),rgba(15,39,69,0.9))] px-5 py-5 text-white shadow-[0_20px_60px_rgba(3,10,18,0.35)] backdrop-blur">
             <div className="flex items-center gap-4">
@@ -489,9 +534,9 @@ export default function EditorPage() {
                   3D Review
                 </p>
                 <h1 className="mt-1 font-display text-2xl font-bold text-medviz-ink">
-                  {activeOverlay.title}
+                  {blockingOverlay.title}
                 </h1>
-                <p className="mt-1 text-sm text-white/68">{activeOverlay.description}</p>
+                <p className="mt-1 text-sm text-white/68">{blockingOverlay.description}</p>
               </div>
             </div>
 
@@ -513,15 +558,48 @@ export default function EditorPage() {
             <div className="mt-4 text-left">
               <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-white/52">
                 <span>Progress</span>
-                <span>{activeOverlay.progress !== null ? `${activeOverlay.progress}%` : 'Preparing'}</span>
+                <span>{blockingOverlay.progress !== null ? `${blockingOverlay.progress}%` : 'Preparing'}</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-medviz-accent transition-[width] duration-300"
-                  style={{ width: `${activeOverlay.progress ?? 18}%` }}
+                  style={{ width: `${blockingOverlay.progress ?? 18}%` }}
                 />
               </div>
-              <div className="mt-2 truncate text-sm text-white/60">{activeOverlay.detail}</div>
+              <div className="mt-2 truncate text-sm text-white/60">{blockingOverlay.detail}</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {statusOverlay ? (
+        <div className="pointer-events-none absolute right-4 top-22 z-125 max-w-sm sm:right-6 sm:top-24">
+          <div className="rounded-2xl border border-medviz-line/80 bg-[linear-gradient(160deg,rgba(9,22,39,0.94),rgba(15,39,69,0.9))] px-4 py-4 text-white shadow-[0_18px_40px_rgba(3,10,18,0.32)] backdrop-blur">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-medviz-line/70 bg-[rgba(15,39,69,0.88)]">
+                <div className="h-4 w-4 animate-spin rounded-full border-[3px] border-medviz-accent/25 border-t-medviz-accent" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-medviz-gold">3D Review</p>
+                <p className="mt-1 font-display text-lg font-bold text-medviz-ink">{statusOverlay.title}</p>
+                <p className="mt-1 text-sm text-white/68">{statusOverlay.description}</p>
+                {statusOverlay.progress !== null ? (
+                  <>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-medviz-accent transition-[width] duration-300"
+                        style={{ width: `${statusOverlay.progress}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-white/56">
+                      <span className="truncate">{statusOverlay.detail}</span>
+                      <span className="ml-3 shrink-0">{statusOverlay.progress}%</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-2 truncate text-sm text-white/60">{statusOverlay.detail}</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
