@@ -799,6 +799,63 @@
   margin: 30px 0 0;
 }
 
+.lp__compliance-card {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(104, 165, 217, 0.2);
+  background: rgba(8, 21, 35, 0.72);
+  text-align: left;
+}
+
+.lp__compliance-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.lp__compliance-list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.lp__compliance-list li {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.lp__compliance-list strong {
+  color: var(--text-hi);
+}
+
+.lp__refund-note {
+  margin-top: 14px;
+  font-size: 0.88rem;
+  color: var(--text-mid);
+}
+
+.lp__refund-note a {
+  color: var(--cyan-soft);
+}
+
+.lp__social-links {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
+.lp__social-links a {
+  color: var(--cyan);
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.lp__social-links a:hover {
+  color: var(--green);
+}
+
 .lp__tally {
   margin-top: 36px;
   border-radius: 24px;
@@ -859,6 +916,15 @@
 .lp__footer p {
   font-size: 0.84rem;
   color: var(--text-lo);
+}
+
+.lp__footer-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.lp__powered-by {
+  color: var(--text-mid);
 }
 
 .lp__footer-links {

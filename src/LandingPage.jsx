@@ -30,6 +30,9 @@ import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'imacul77@gmail.com';
+const MEDVIZ_URL = 'https://medviz3d.com';
+const FOUNDER_SOCIAL_URL = 'https://x.com/ImmaculRichie';
+const PMC_SOCIAL_URL = 'https://x.com/ProjMastery';
 
 const OFFER_PILLARS = [
   {
@@ -570,6 +573,39 @@ export default function LandingPage({
               </button>
             </div>
 
+            <div className="lp__compliance-card">
+              <h3>Business Profile and Refund Policy</h3>
+              <ul className="lp__compliance-list">
+                <li>
+                  <strong>Account purpose:</strong> Receive payments for MedViz pilot sprints and software
+                  services delivered under PMC Projects Mastery Connect (PMC).
+                </li>
+                <li>
+                  <strong>Business description:</strong> MedViz is a browser-based 3D review platform for oral
+                  and maxillofacial workflows.
+                </li>
+                <li>
+                  <strong>Estimated monthly volume:</strong> USD 1,000 to USD 5,000 during pilot rollout.
+                </li>
+              </ul>
+              <p className="lp__refund-note">
+                Refund policy: pilot fees are refundable before onboarding starts; after onboarding begins,
+                completed work is billed based on delivered milestones. Monthly plans can be canceled before the
+                next billing cycle. For refund requests, contact <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+              </p>
+              <div className="lp__social-links">
+                <a href={MEDVIZ_URL} target="_blank" rel="noreferrer">
+                  Website: medviz3d.com
+                </a>
+                <a href={FOUNDER_SOCIAL_URL} target="_blank" rel="noreferrer">
+                  Founder: x.com/ImmaculRichie
+                </a>
+                <a href={PMC_SOCIAL_URL} target="_blank" rel="noreferrer">
+                  PMC: x.com/ProjMastery
+                </a>
+              </div>
+            </div>
+
             <div className="lp__tally">
               {TALLY_FORM_ID ? (
                 <iframe
@@ -595,7 +631,10 @@ export default function LandingPage({
           <img src={logoSvg} alt="MedViz logo" />
           <span>MedViz</span>
         </div>
-        <p>(c) {currentYear} MedViz. Private 3D case review pilots for clinical teams.</p>
+        <div className="lp__footer-copy">
+          <p>(c) {currentYear} MedViz. Private 3D case review pilots for clinical teams.</p>
+          <p className="lp__powered-by">Powered by PMC Projects Mastery Connect.</p>
+        </div>
         <ul className="lp__footer-links">
           <li>
             <button onClick={() => scrollToSection('offer')}>Offer</button>
