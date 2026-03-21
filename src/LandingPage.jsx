@@ -21,12 +21,12 @@ import {
 } from 'react-icons/fi';
 import { TbBone, TbBrandDatabricks, TbRuler, TbStethoscope } from 'react-icons/tb';
 
-import ss1 from '../screenshots/Screenshot 2026-02-07 183302.png';
-import ss2 from '../screenshots/Screenshot 2026-02-07 183113.png';
-import ss3 from '../screenshots/Screenshot 2026-02-07 183405.png';
-import ss4 from '../screenshots/Screenshot 2026-02-07 104323.png';
-import ss5 from '../screenshots/Screenshot 2026-03-19 191802.png';
-import ss6 from '../screenshots/Screenshot 2026-03-19 192014.png';
+import ss1 from '../screenshots/Screenshot 2026-02-07 183302 - optimized.jpg';
+import ss2 from '../screenshots/Screenshot 2026-02-07 183113 - optimized.jpg';
+import ss3 from '../screenshots/Screenshot 2026-02-07 183405 - optimized.jpg';
+import ss4 from '../screenshots/Screenshot 2026-02-07 104323 - optimized.jpg';
+import ss5 from '../screenshots/Screenshot 2026-03-19 191802 - optimized.jpg';
+import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'imacul77@gmail.com';
