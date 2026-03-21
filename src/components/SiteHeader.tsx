@@ -85,39 +85,41 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
   return (
     <>
       <header className="site-header">
-        {onBrandClick ? (
-          <button type="button" onClick={onBrandClick} className="site-header__brand">
-            <img src={logoSvg} alt="MedViz logo" />
-            <span className="site-header__brand-text">
-              Med<em>Viz</em>
-            </span>
+        <div className="site-header__inner">
+          {onBrandClick ? (
+            <button type="button" onClick={onBrandClick} className="site-header__brand">
+              <img src={logoSvg} alt="MedViz logo" />
+              <span className="site-header__brand-text">
+                Med<em>Viz</em>
+              </span>
+            </button>
+          ) : (
+            <Link to="/" className="site-header__brand">
+              <img src={logoSvg} alt="MedViz logo" />
+              <span className="site-header__brand-text">
+                Med<em>Viz</em>
+              </span>
+            </Link>
+          )}
+
+          <nav className="site-header__nav">
+            {navigationItems.map((item) => renderItem(item))}
+          </nav>
+
+          <div className="site-header__actions">
+            {actions.map((item) => renderItem(item))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((value) => !value)}
+            className="site-header__toggle"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
           </button>
-        ) : (
-          <Link to="/" className="site-header__brand">
-            <img src={logoSvg} alt="MedViz logo" />
-            <span className="site-header__brand-text">
-              Med<em>Viz</em>
-            </span>
-          </Link>
-        )}
-
-        <nav className="site-header__nav">
-          {navigationItems.map((item) => renderItem(item))}
-        </nav>
-
-        <div className="site-header__actions">
-          {actions.map((item) => renderItem(item))}
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen((value) => !value)}
-          className="site-header__toggle"
-          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={isMenuOpen}
-        >
-          {isMenuOpen ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
-        </button>
       </header>
 
       <div className={`site-header__mobile ${isMenuOpen ? 'site-header__mobile--open' : ''}`}>

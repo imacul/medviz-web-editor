@@ -335,7 +335,13 @@ export default function LandingPage({
               <div className="lp__dot lp__dot--g" />
               <div className="lp__url-bar">www.medviz3d.com / private review portal</div>
             </div>
-            <img src={ss5} alt="MedViz editor showing a mandible review workflow" />
+            <img
+              src={ss5}
+              alt="MedViz editor showing a mandible review workflow"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
             <div className="lp__surface-card lp__surface-card--top">
               <FiLock size={16} />
               <div>
@@ -488,6 +494,8 @@ export default function LandingPage({
                   src={shot.src}
                   alt={shot.alt}
                   loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   onClick={() => setLightboxSrc(shot.src)}
                   style={{ cursor: 'pointer' }}
                 />
@@ -611,7 +619,7 @@ export default function LandingPage({
           <button className="lp__lightbox-close" onClick={() => setLightboxSrc(null)}>
             x
           </button>
-          <img src={lightboxSrc} alt="Screenshot preview" />
+          <img src={lightboxSrc} alt="Screenshot preview" decoding="async" fetchPriority="high" />
         </div>
       )}
     </div>

@@ -2,14 +2,22 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 5%;
-  height: 64px;
+  padding-top: env(safe-area-inset-top, 0px);
   background: rgba(6, 15, 26, 0.88);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid #1a3a5c;
+}
+
+.site-header__inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
 .site-header__brand {
@@ -125,14 +133,15 @@
 
 .site-header__mobile {
   position: fixed;
-  top: 64px;
+  top: calc(64px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   z-index: 99;
   display: none;
   flex-direction: column;
   gap: 10px;
-  padding: 18px 5%;
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) 18px
+    max(16px, env(safe-area-inset-left, 0px));
   background: rgba(6, 15, 26, 0.98);
   border-bottom: 1px solid #1a3a5c;
 }
@@ -161,14 +170,9 @@
 }
 
 @media (max-width: 767px) {
-  .site-header {
-    padding-left: clamp(16px, 5vw, 22px);
-    padding-right: clamp(16px, 5vw, 22px);
-  }
-
-  .site-header__mobile {
-    padding-left: clamp(16px, 5vw, 22px);
-    padding-right: clamp(16px, 5vw, 22px);
+  .site-header__inner {
+    padding-left: max(clamp(16px, 5vw, 22px), env(safe-area-inset-left, 0px));
+    padding-right: max(clamp(16px, 5vw, 22px), env(safe-area-inset-right, 0px));
   }
 
   .site-header__nav,
