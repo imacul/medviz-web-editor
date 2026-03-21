@@ -17,3 +17,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Gmail monitor state
+outreach/gmail_reply_monitor_state*.json

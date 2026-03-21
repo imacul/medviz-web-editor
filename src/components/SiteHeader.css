@@ -15,9 +15,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  gap: 18px;
+  padding-left: max(clamp(20px, 5vw, 64px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(20px, 5vw, 64px), env(safe-area-inset-right, 0px));
 }
 
 .site-header__brand {
@@ -52,7 +52,7 @@
 .site-header__nav {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
   list-style: none;
 }
 
@@ -71,7 +71,8 @@
 .site-header__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .site-header__button {
@@ -79,11 +80,13 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 9px 22px;
-  border-radius: 10px;
+  padding: 10px 18px;
+  min-height: 40px;
+  border-radius: 999px;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
@@ -194,5 +197,16 @@
 
   .site-header__mobile--open {
     display: flex;
+  }
+}
+
+@media (max-width: 1180px) {
+  .site-header__nav,
+  .site-header__actions {
+    display: none;
+  }
+
+  .site-header__toggle {
+    display: inline-flex;
   }
 }
