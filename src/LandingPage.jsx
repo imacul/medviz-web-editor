@@ -34,23 +34,23 @@ const CONTACT_EMAIL = 'imacul77@gmail.com';
 const OFFER_PILLARS = [
   {
     Icon: FiUploadCloud,
-    title: 'Browser-based review',
-    desc: 'Open de-identified 3D cases in the browser without asking surgeons or staff to install heavy local software.',
+    title: '7-day pilot launch',
+    desc: 'Go live quickly on one de-identified case without waiting for a heavy software rollout.',
   },
   {
     Icon: TbRuler,
-    title: 'Measured, annotated workflow',
-    desc: 'Give teams a practical review surface for measurements, comments, slices, saved views, and exportable findings.',
+    title: 'Measured review workflow',
+    desc: 'Review anatomy with measurements, annotations, slices, saved views, and exportable findings.',
   },
   {
     Icon: FiShield,
-    title: 'Private pilot setup',
-    desc: 'Start with a controlled pilot and tailor the review flow to how your clinic, oral surgery group, training program, or lab already works.',
+    title: 'Private deployment',
+    desc: 'Run a controlled pilot environment aligned to how your team already reviews maxillofacial cases.',
   },
   {
     Icon: FiFileText,
-    title: 'Report-ready output',
-    desc: 'Capture screenshots, case notes, and measurements in a format that is easier to share and discuss with collaborators.',
+    title: 'Report-ready outputs',
+    desc: 'Capture screenshots, notes, and measurements in a format your collaborators can review quickly.',
   },
 ];
 
@@ -80,59 +80,59 @@ const BUYERS = [
 const PROCESS = [
   {
     n: '01',
-    title: 'Book a short workflow call',
-    desc: 'We look at your current review process, the kind of cases you handle, and where communication breaks down.',
+    title: 'Book a 15-minute call',
+    desc: 'We identify one review bottleneck to fix first and confirm pilot scope.',
   },
   {
     n: '02',
-    title: 'Pilot on a de-identified case',
-    desc: 'You share a safe sample case or workflow example and we map the MedViz setup to that specific review need.',
+    title: 'Run one de-identified case',
+    desc: 'We configure MedViz around one real workflow and your team validates it in practice.',
   },
   {
     n: '03',
-    title: 'Launch a private workspace',
-    desc: 'We configure a branded portal with review links, measurements, annotations, and exportable case output.',
+    title: 'Launch private workspace',
+    desc: 'Your team gets a working portal with review links, measurements, comments, and exports.',
   },
   {
     n: '04',
-    title: 'Refine from real use',
-    desc: 'We tighten the workflow around your team before deciding whether to continue, expand, or customize further.',
+    title: 'Decide next step',
+    desc: 'Review outcomes and choose to continue support, expand to more users, or request custom workflow work.',
   },
 ];
 
 const PACKAGES = [
   {
-    title: 'Starter Pilot',
-    price: '$750',
-    cadence: 'one-time setup',
-    support: '$99/month hosting and support',
-    summary: 'Best for one team that wants to test whether browser-based 3D review fits its workflow.',
+    title: 'Pilot Sprint',
+    price: '$1,000',
+    cadence: '7-day launch sprint',
+    support: '$149/month hosting and support after sprint',
+    summary: 'Best for one team that needs a fast proof of workflow fit this month.',
     points: [
-      '1 branded workspace',
-      'up to 3 users',
-      'measurements, annotations, slices, and reports',
-      'guided setup on a de-identified case',
+      '1 private workspace',
+      'up to 5 users',
+      'guided setup on one de-identified case',
+      'measurements, annotations, slices, sharing, and report export',
     ],
   },
   {
-    title: 'Clinic Setup',
-    price: '$1,500',
-    cadence: 'one-time setup',
-    support: '$149/month hosting and support',
-    summary: 'For clinics and surgical groups that want a clearer, more repeatable review workflow.',
+    title: 'Clinic Rollout',
+    price: '$2,000',
+    cadence: 'one-time rollout setup',
+    support: '$199/month hosting and support',
+    summary: 'For clinics that want a more repeatable review workflow across a broader team.',
     points: [
       'private portal and branded review experience',
-      'up to 10 users',
+      'up to 15 users',
       'workflow tuning and onboarding call',
       'priority support during rollout',
     ],
   },
   {
     title: 'Custom Workflow',
-    price: '$2,500+',
+    price: '$3,500+',
     cadence: 'custom scope',
     support: 'quoted per deployment',
-    summary: 'For organizations that need a branded deployment, custom features, or a more specialized collaboration flow.',
+    summary: 'For organizations that need deeper integrations, custom tooling, or white-label deployment.',
     points: [
       'custom reporting or white-labeling',
       'specialized review tools or workflow tailoring',
@@ -143,10 +143,10 @@ const PACKAGES = [
 ];
 
 const OUTCOMES = [
-  'Present complex anatomy more clearly',
-  'Reduce friction in remote case review',
-  'Share findings without local installs',
-  'Evaluate fit before expanding to more teams',
+  'Launch one validated workflow in 7 days',
+  'Reduce review friction across distributed teams',
+  'Share findings without local software installs',
+  'Expand only after measurable pilot outcomes',
 ];
 
 const SCREENSHOTS = [
@@ -193,17 +193,18 @@ function scrollToSection(id) {
 }
 
 function openPilotEmail() {
-  const subject = encodeURIComponent('MedViz Private Pilot Request');
+  const subject = encodeURIComponent('MedViz Pilot Sprint Request ($1,000)');
   const body = encodeURIComponent(
     [
       'Hi Emmanuel,',
       '',
-      "I'm interested in a MedViz private pilot for my team.",
+      "I'm interested in starting a MedViz Pilot Sprint for my team.",
       '',
       'Organization:',
       'Use case:',
       'Team size:',
-      'Preferred timeline:',
+      'Preferred start date:',
+      'Urgency (this week / this month):',
       '',
       'Thanks,',
     ].join('\n')
@@ -247,7 +248,7 @@ export default function LandingPage({
   }, []);
 
   const appAction = isAuthenticated ? onOpenDashboard : onLogin;
-  const appActionLabel = isAuthenticated ? 'Open workspace' : 'Open live app';
+  const appActionLabel = isAuthenticated ? 'Open workspace' : 'See live app';
 
   return (
     <div className="lp">
@@ -264,8 +265,8 @@ export default function LandingPage({
           { label: 'Contact', href: '#feedback' },
         ]}
         actions={[
-          { label: 'Request Pilot', onClick: openPilotEmail, variant: 'outline' },
-          { label: appActionLabel, onClick: appAction, variant: 'primary' },
+          { label: appActionLabel, onClick: appAction, variant: 'outline' },
+          { label: 'Book 15-Min Call', onClick: openPilotEmail, variant: 'primary' },
         ]}
       />
 
@@ -275,27 +276,28 @@ export default function LandingPage({
           <div className="lp__hero-copy">
             <div className="lp__badge">
               <span className="lp__badge-dot" />
-              Private 3D case review setup for oral and maxillofacial teams
+              2 pilot slots open this month for oral and maxillofacial teams
             </div>
 
             <h1>
-              Bring MedViz Into a
+              Launch Your Team's
               <br />
-              <span className="lp__highlight">Private 3D Review Workflow</span>
+              <span className="lp__highlight">Private 3D Review Workflow in 7 Days</span>
             </h1>
 
             <p className="lp__hero-sub">
-              MedViz is now offered as a private pilot setup for teams that need a clearer way to review,
-              annotate, measure, and share complex 3D maxillofacial cases in the browser.
+              MedViz helps oral and maxillofacial teams review, measure, annotate, and share complex
+              3D cases in the browser without local software installs. Start with one paid pilot sprint,
+              then expand after clear workflow results.
             </p>
 
             <div className="lp__ctas">
               <button className="lp__btn lp__btn--primary lp__btn--lg" onClick={openPilotEmail}>
-                Request Private Pilot
+                Book 15-Min Workflow Call
                 <FiArrowRight size={16} />
               </button>
               <button className="lp__btn lp__btn--outline lp__btn--lg" onClick={() => scrollToSection('pricing')}>
-                View Pricing
+                Start at $1,000
               </button>
               <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={appAction}>
                 {appActionLabel}
@@ -304,12 +306,13 @@ export default function LandingPage({
 
             <div className="lp__tags">
               {[
-                'No software to install',
-                'Private pilot setup',
+                '7-day pilot sprint',
+                'Starts at $1,000',
+                'No local software installs',
                 'Annotations and measurements',
                 'Case sharing links',
                 'Exportable review reports',
-                'Built for OMFS workflows',
+                'Built for OMFS teams',
               ].map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
@@ -354,12 +357,12 @@ export default function LandingPage({
       <section className="lp__signal-band">
         <div className="lp__signal-grid">
           <div>
-            <p className="lp__signal-kicker">Why Teams Use MedViz</p>
-            <h2>Less review friction. Better case communication. Faster browser-based access.</h2>
+            <p className="lp__signal-kicker">Why Teams Buy MedViz</p>
+            <h2>Faster case review, clearer communication, and lower rollout friction.</h2>
           </div>
           <p>
-            MedViz gives teams a focused way to review complex 3D cases, explain findings more clearly, and
-            share the workflow without relying on heavy local software.
+            Instead of forcing a full software migration, teams start with one paid sprint, validate
+            workflow value, and expand only when results are clear.
           </p>
         </div>
       </section>
@@ -367,10 +370,9 @@ export default function LandingPage({
       <section id="offer" className="lp__features-bg">
         <div className="lp__inner">
           <p className="lp__label">Offer</p>
-          <h2 className="lp__title">What a private MedViz setup includes</h2>
+          <h2 className="lp__title">What the $1,000 Pilot Sprint includes</h2>
           <p className="lp__sub">
-            Start with a focused setup that matches a real maxillofacial workflow and lets your team evaluate
-            MedViz in practice.
+            Start with one focused setup built around a real workflow bottleneck and validate value fast.
           </p>
           <div className="lp__features-grid">
             {OFFER_PILLARS.map(({ Icon, title, desc }) => (
@@ -410,9 +412,9 @@ export default function LandingPage({
       <section id="workflow" className="lp__workflow-bg">
         <div className="lp__inner">
           <p className="lp__label">Pilot Flow</p>
-          <h2 className="lp__title">How a private MedViz pilot works</h2>
+          <h2 className="lp__title">How the 7-day pilot sprint works</h2>
           <p className="lp__sub">
-            Keep the first rollout focused, useful, and easy to evaluate with your team.
+            Keep rollout focused and measurable so your team can decide quickly.
           </p>
           <div className="lp__steps">
             {PROCESS.map((step) => (
@@ -439,9 +441,9 @@ export default function LandingPage({
       <section id="pricing" className="lp__pricing-bg">
         <div className="lp__inner">
           <p className="lp__label">Pricing</p>
-          <h2 className="lp__title">Start with a paid pilot, not a full software rollout</h2>
+          <h2 className="lp__title">Choose your pilot scope</h2>
           <p className="lp__sub">
-                  Most MedViz buyers start with one team, validate workflow fit quickly, then expand after clear clinical value.
+            Most teams start with Pilot Sprint, prove fit on one case workflow, then expand.
           </p>
           <div className="lp__pricing-grid">
             {PACKAGES.map((pkg) => (
@@ -464,7 +466,7 @@ export default function LandingPage({
                   ))}
                 </ul>
                 <button className="lp__btn lp__btn--primary lp__btn--full" onClick={openPilotEmail}>
-                  Request {pkg.title}
+                  Book {pkg.title}
                 </button>
               </RevealCard>
             ))}
@@ -522,14 +524,14 @@ export default function LandingPage({
       <section className="lp__cta-band">
         <div className="lp__cta-inner">
           <div>
-            <h2>Ready to launch a private pilot for your team?</h2>
+            <h2>Need this live before month-end?</h2>
             <p>
-              Start with one clinic, one program, or one partner team. Use a focused pilot to see how MedViz fits your workflow before rolling it out more broadly.
+              Book a short call, launch one private pilot sprint, and decide with real workflow feedback.
             </p>
           </div>
           <div className="lp__cta-stack">
             <button className="lp__cta-glow" onClick={openPilotEmail}>
-              Request Private Pilot
+              Claim a Pilot Slot
             </button>
             <button className="lp__cta-plain" onClick={appAction}>
               {appActionLabel}
@@ -543,16 +545,16 @@ export default function LandingPage({
           <div className="lp__feedback-wrap">
             <p className="lp__label" style={{ textAlign: 'center' }}>Contact</p>
             <h2 className="lp__title" style={{ maxWidth: '100%', textAlign: 'center' }}>
-              Start With a Short Pilot Conversation
+              Book a 15-Min Pilot Fit Call
             </h2>
             <p className="lp__sub" style={{ maxWidth: '100%', textAlign: 'center', marginBottom: 0 }}>
-              Use the form below to ask about a private pilot, workflow fit, or a more customized MedViz setup.
+              Use the form below to lock a pilot slot, discuss workflow fit, and get started fast.
             </p>
 
             <div className="lp__contact-actions">
               <button className="lp__btn lp__btn--primary" onClick={openPilotEmail}>
                 <FiMail size={16} />
-                Email Emmanuel
+                Request Pilot Call
               </button>
               <button className="lp__btn lp__btn--outline" onClick={() => scrollToSection('screenshots')}>
                 <FiCamera size={16} />
@@ -585,7 +587,7 @@ export default function LandingPage({
           <img src={logoSvg} alt="MedViz logo" />
           <span>MedViz</span>
         </div>
-        <p>(c) {currentYear} MedViz. Private 3D review workflows for clinical teams.</p>
+        <p>(c) {currentYear} MedViz. Private 3D case review pilots for clinical teams.</p>
         <ul className="lp__footer-links">
           <li>
             <button onClick={() => scrollToSection('offer')}>Offer</button>
@@ -594,7 +596,7 @@ export default function LandingPage({
             <button onClick={() => scrollToSection('pricing')}>Pricing</button>
           </li>
           <li>
-            <button onClick={openPilotEmail}>Request Pilot</button>
+            <button onClick={openPilotEmail}>Book Call</button>
           </li>
         </ul>
       </footer>

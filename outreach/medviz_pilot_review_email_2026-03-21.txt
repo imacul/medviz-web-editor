@@ -1,0 +1,34 @@
+Hi Emmanuel,
+
+Your MedViz outreach batch has been personalized and is ready for review.
+
+Date: March 21, 2026
+Offer used: MedViz Pilot Sprint ($1,000, 7-day setup)
+Primary CTA: 15-minute workflow call
+
+Updated file:
+- C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_batch_medviz_pilot_sprint_personalized_2026-03-21.csv
+
+Sequence file:
+- C:\Users\HP\Documents\medviz_web_editor\outreach\medviz_pilot_sprint_10_day_sequence_2026-03-21.md
+
+Recipients in the personalized CSV:
+1) reception@hbomfs.com
+   Subject: 15-min question on your OMFS case review workflow
+
+2) Drfarshidi@ocmaxsurgery.com
+   Subject: Pilot slot for OC Maxillofacial Surgery Center (7-day setup)
+
+3) office@northwestfloridaoms.com
+   Subject: Quick workflow fit check for Northwest Florida OMS
+
+4) info@njfacialsurgery.com
+   Subject: Pilot sprint for your maxillofacial case review flow
+
+5) face2facesurgeryoffice@gmail.com
+   Subject: 15-min workflow call for Face2Face Maxillofacial Surgery Centre
+
+Reply "approved" if you want this same batch sent next.
+
+Best,
+Codex
