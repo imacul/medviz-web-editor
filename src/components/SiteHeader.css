@@ -206,7 +206,7 @@
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1180px) {
   .site-header__nav,
   .site-header__actions {
     display: none;
