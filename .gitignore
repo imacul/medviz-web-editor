@@ -20,3 +20,5 @@ Thumbs.db
 
 # Gmail monitor state
 outreach/gmail_reply_monitor_state*.json
+outreach/gmail_realtime_responder_state*.json
+outreach/gmail_send_log_*.csv

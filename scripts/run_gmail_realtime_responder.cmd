@@ -1,0 +1,2 @@
+@echo off
+"C:\Users\HP\AppData\Local\Python\bin\python.exe" "C:\Users\HP\Documents\medviz_web_editor\scripts\gmail_realtime_responder.py" --credentials "C:\Users\HP\gmail-credentials.json" --token "C:\Users\HP\gmail-token-monitor.json" --state-file "C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_realtime_responder_state.json" --query "in:inbox is:unread subject:(MedViz) newer_than:2d -subject:\"[Codex-Ack]\"" --sender-filter "imacul77@gmail.com" --body-file "C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_realtime_ack_template.txt" --limit 20
