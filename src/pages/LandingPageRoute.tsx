@@ -8,6 +8,7 @@ const LANDING_TITLE = 'MedViz 3D Case Review Software for Oral Surgery and Impla
 const LANDING_DESCRIPTION =
   'MedViz is browser-based 3D case review software for oral and maxillofacial teams to review, measure, annotate, and share cases.';
 const LANDING_URL = 'https://www.medviz3d.com/';
+const LANDING_IMAGE = 'https://www.medviz3d.com/medviz-social-share.png';
 
 function upsertMeta(attribute: 'name' | 'property', value: string, content: string) {
   let meta = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement | null;
@@ -41,8 +42,14 @@ export default function LandingPageRoute() {
     upsertMeta('property', 'og:title', LANDING_TITLE);
     upsertMeta('property', 'og:description', LANDING_DESCRIPTION);
     upsertMeta('property', 'og:url', LANDING_URL);
+    upsertMeta('property', 'og:image', LANDING_IMAGE);
+    upsertMeta('property', 'og:image:secure_url', LANDING_IMAGE);
+    upsertMeta('property', 'og:image:width', '1200');
+    upsertMeta('property', 'og:image:height', '630');
+    upsertMeta('property', 'og:image:alt', 'MedViz 3D case review software for oral surgery and implant teams');
     upsertMeta('name', 'twitter:title', LANDING_TITLE);
     upsertMeta('name', 'twitter:description', LANDING_DESCRIPTION);
+    upsertMeta('name', 'twitter:image', LANDING_IMAGE);
     upsertCanonical(LANDING_URL);
   }, []);
 
