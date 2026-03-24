@@ -4,6 +4,31 @@ import { useLocation, useNavigate } from 'react-router';
 import LandingPage from '../LandingPage.jsx';
 import { useAuth } from '../features/auth/AuthProvider';
 
+const LANDING_TITLE = 'MedViz 3D | Private 3D Case Review for Oral & Maxillofacial Teams';
+const LANDING_DESCRIPTION =
+  'MedViz helps oral and maxillofacial teams review, measure, annotate, and share complex 3D cases in a private browser workflow.';
+const LANDING_URL = 'https://medviz3d.com/';
+
+function upsertMeta(attribute: 'name' | 'property', value: string, content: string) {
+  let meta = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute(attribute, value);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute('content', content);
+}
+
+function upsertCanonical(href: string) {
+  let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+  link.setAttribute('href', href);
+}
+
 export default function LandingPageRoute() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -11,7 +36,14 @@ export default function LandingPageRoute() {
 
   useEffect(() => {
     document.body.classList.remove('editor-mode');
-    document.title = 'MedViz - Clinical 3D Review';
+    document.title = LANDING_TITLE;
+    upsertMeta('name', 'description', LANDING_DESCRIPTION);
+    upsertMeta('property', 'og:title', LANDING_TITLE);
+    upsertMeta('property', 'og:description', LANDING_DESCRIPTION);
+    upsertMeta('property', 'og:url', LANDING_URL);
+    upsertMeta('name', 'twitter:title', LANDING_TITLE);
+    upsertMeta('name', 'twitter:description', LANDING_DESCRIPTION);
+    upsertCanonical(LANDING_URL);
   }, []);
 
   useEffect(() => {
