@@ -30,7 +30,7 @@ import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'imacul77@gmail.com';
-const MEDVIZ_URL = 'https://medviz3d.com';
+const MEDVIZ_URL = 'https://www.medviz3d.com';
 const FOUNDER_SOCIAL_URL = 'https://x.com/ImmaculRichie';
 const PMC_SOCIAL_URL = 'https://x.com/ProjMastery';
 

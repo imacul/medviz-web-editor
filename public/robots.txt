@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://medviz3d.com/sitemap.xml
+Sitemap: https://www.medviz3d.com/sitemap.xml

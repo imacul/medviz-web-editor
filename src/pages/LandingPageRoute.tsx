@@ -7,7 +7,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 const LANDING_TITLE = 'MedViz 3D | Private 3D Case Review for Oral & Maxillofacial Teams';
 const LANDING_DESCRIPTION =
   'MedViz helps oral and maxillofacial teams review, measure, annotate, and share complex 3D cases in a private browser workflow.';
-const LANDING_URL = 'https://medviz3d.com/';
+const LANDING_URL = 'https://www.medviz3d.com/';
 
 function upsertMeta(attribute: 'name' | 'property', value: string, content: string) {
   let meta = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement | null;
