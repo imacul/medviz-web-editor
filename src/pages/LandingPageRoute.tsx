@@ -4,9 +4,9 @@ import { useLocation, useNavigate } from 'react-router';
 import LandingPage from '../LandingPage.jsx';
 import { useAuth } from '../features/auth/AuthProvider';
 
-const LANDING_TITLE = 'MedViz 3D | Private 3D Case Review for Oral & Maxillofacial Teams';
+const LANDING_TITLE = 'MedViz 3D Case Review Software for Oral Surgery and Implant Teams';
 const LANDING_DESCRIPTION =
-  'MedViz helps oral and maxillofacial teams review, measure, annotate, and share complex 3D cases in a private browser workflow.';
+  'MedViz is browser-based 3D case review software for oral and maxillofacial teams to review, measure, annotate, and share cases.';
 const LANDING_URL = 'https://www.medviz3d.com/';
 
 function upsertMeta(attribute: 'name' | 'property', value: string, content: string) {

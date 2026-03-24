@@ -38,40 +38,40 @@ const OFFER_PILLARS = [
   {
     Icon: FiUploadCloud,
     title: '7-day pilot launch',
-    desc: 'Go live quickly on one de-identified case without waiting for a heavy software rollout.',
+    desc: 'Go live on one de-identified case quickly without waiting for a heavy software rollout.',
   },
   {
     Icon: TbRuler,
     title: 'Measured review workflow',
-    desc: 'Review anatomy with measurements, annotations, slices, saved views, and exportable findings.',
+    desc: 'Review anatomy with measurements, annotations, slices, saved views, and exportable findings in one browser flow.',
   },
   {
     Icon: FiShield,
     title: 'Private deployment',
-    desc: 'Run a controlled pilot environment aligned to how your team already reviews maxillofacial cases.',
+    desc: 'Run a controlled pilot environment aligned to your current oral surgery and implant case-review workflow.',
   },
   {
     Icon: FiFileText,
     title: 'Report-ready outputs',
-    desc: 'Capture screenshots, notes, and measurements in a format your collaborators can review quickly.',
+    desc: 'Capture screenshots, notes, and measurements in a format collaborators can review and approve quickly.',
   },
 ];
 
 const BUYERS = [
   {
     Icon: TbBone,
-    title: 'Oral and maxillofacial clinics',
-    desc: 'For teams that need a clearer way to review anatomy, discuss findings, and share complex 3D cases.',
+    title: 'Oral and maxillofacial surgery clinics',
+    desc: 'For teams that need a clearer way to review anatomy, align plans, and present complex 3D cases.',
   },
   {
     Icon: TbStethoscope,
     title: 'Dental implant and surgical centers',
-    desc: 'For practices presenting implant, jaw, TMJ, trauma, and craniofacial cases across multiple stakeholders.',
+    desc: 'For practices managing implant, jaw, TMJ, trauma, and craniofacial workflows across multiple stakeholders.',
   },
   {
     Icon: FiUsers,
     title: 'Training programs',
-    desc: 'For departments that want reusable browser-based teaching and case presentation workflows for residents or fellows.',
+    desc: 'For departments that want reusable browser-based teaching and 3D case presentation workflows for residents or fellows.',
   },
   {
     Icon: TbBrandDatabricks,
@@ -84,22 +84,22 @@ const PROCESS = [
   {
     n: '01',
     title: 'Book a 15-minute call',
-    desc: 'We identify one review bottleneck to fix first and confirm pilot scope.',
+    desc: 'We identify one case-review bottleneck to fix first and confirm pilot scope.',
   },
   {
     n: '02',
     title: 'Run one de-identified case',
-    desc: 'We configure MedViz around one real workflow and your team validates it in practice.',
+    desc: 'We configure MedViz around one real workflow so your team can validate fit in practice.',
   },
   {
     n: '03',
     title: 'Launch private workspace',
-    desc: 'Your team gets a working portal with review links, measurements, comments, and exports.',
+    desc: 'Your team gets a working portal with secure review links, measurements, comments, and exports.',
   },
   {
     n: '04',
     title: 'Decide next step',
-    desc: 'Review outcomes and choose to continue support, expand to more users, or request custom workflow work.',
+    desc: 'Review outcomes and choose to continue support, expand users, or request custom workflow features.',
   },
 ];
 
@@ -146,8 +146,8 @@ const PACKAGES = [
 ];
 
 const OUTCOMES = [
-  'Launch one validated workflow in 7 days',
-  'Reduce review friction across distributed teams',
+  'Launch one validated 3D review workflow in 7 days',
+  'Shorten time from model upload to team review',
   'Share findings without local software installs',
   'Expand only after measurable pilot outcomes',
 ];
@@ -279,19 +279,19 @@ export default function LandingPage({
           <div className="lp__hero-copy">
             <div className="lp__badge">
               <span className="lp__badge-dot" />
-              2 pilot slots open this month for oral and maxillofacial teams
+              2 pilot slots open this month for oral surgery and implant teams
             </div>
 
             <h1>
-              Launch Your Team's
+              3D Case Review Software
               <br />
-              <span className="lp__highlight">Private 3D Review Workflow in 7 Days</span>
+              <span className="lp__highlight">for Oral Surgery and Implant Teams</span>
             </h1>
 
             <p className="lp__hero-sub">
-              MedViz helps oral and maxillofacial teams review, measure, annotate, and share complex
-              3D cases in the browser without local software installs. Start with one paid pilot sprint,
-              then expand after clear workflow results.
+              MedViz helps oral and maxillofacial clinics review, measure, annotate, and share complex
+              3D cases in the browser. Start with one paid pilot sprint, prove fit on a real case workflow,
+              then expand with confidence.
             </p>
 
             <div className="lp__ctas">
@@ -311,11 +311,12 @@ export default function LandingPage({
               {[
                 '7-day pilot sprint',
                 'Starts at $1,000',
+                '3D case review software',
                 'No local software installs',
                 'Annotations and measurements',
                 'Case sharing links',
                 'Exportable review reports',
-                'Built for OMFS teams',
+                'Built for OMFS and implant teams',
               ].map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
@@ -366,22 +367,22 @@ export default function LandingPage({
       <section className="lp__signal-band">
         <div className="lp__signal-grid">
           <div>
-            <p className="lp__signal-kicker">Why Teams Buy MedViz</p>
-            <h2>Faster case review, clearer communication, and lower rollout friction.</h2>
-          </div>
-          <p>
-            Instead of forcing a full software migration, teams start with one paid sprint, validate
-            workflow value, and expand only when results are clear.
-          </p>
+          <p className="lp__signal-kicker">Why Teams Buy MedViz</p>
+          <h2>Faster case review, clearer decisions, and less rollout friction.</h2>
         </div>
-      </section>
+        <p>
+            Instead of forcing a full software migration, teams start with one paid sprint, validate
+            workflow value on real cases, and expand only when results are clear.
+        </p>
+      </div>
+    </section>
 
       <section id="offer" className="lp__features-bg">
         <div className="lp__inner">
           <p className="lp__label">Offer</p>
           <h2 className="lp__title">What the $1,000 Pilot Sprint includes</h2>
           <p className="lp__sub">
-            Start with one focused setup built around a real workflow bottleneck and validate value fast.
+            Start with one focused setup built around a real workflow bottleneck and validate value quickly.
           </p>
           <div className="lp__features-grid">
             {OFFER_PILLARS.map(({ Icon, title, desc }) => (
@@ -402,7 +403,7 @@ export default function LandingPage({
           <p className="lp__label">Who It Is For</p>
           <h2 className="lp__title">Who MedViz fits best</h2>
           <p className="lp__sub">
-            MedViz fits teams that regularly review complex 3D cases and need a clearer way to coordinate discussion, findings, and follow-up.
+            MedViz fits teams that regularly review complex 3D cases and need a clearer way to coordinate planning, findings, and follow-up.
           </p>
           <div className="lp__buyers-grid">
             {BUYERS.map(({ Icon, title, desc }) => (
@@ -442,7 +443,7 @@ export default function LandingPage({
           <FiLock size={16} color="var(--green)" style={{ flexShrink: 0 }} />
           <p>
             MedViz supports orientation confirmation, unit confirmation, annotations, sharing, and report export so
-            the workflow is easier to trust during early pilot use.
+            your team can trust early pilot decisions.
           </p>
         </div>
       </section>
@@ -452,7 +453,7 @@ export default function LandingPage({
           <p className="lp__label">Pricing</p>
           <h2 className="lp__title">Choose your pilot scope</h2>
           <p className="lp__sub">
-            Most teams start with Pilot Sprint, prove fit on one case workflow, then expand.
+            Most teams start with Pilot Sprint, prove fit on one high-value case workflow, then expand.
           </p>
           <div className="lp__pricing-grid">
             {PACKAGES.map((pkg) => (
@@ -537,7 +538,7 @@ export default function LandingPage({
           <div>
             <h2>Need this live before month-end?</h2>
             <p>
-              Book a short call, launch one private pilot sprint, and decide with real workflow feedback.
+              Book a short call, launch one private pilot sprint, and decide with real case workflow feedback.
             </p>
           </div>
           <div className="lp__cta-stack">
@@ -559,7 +560,7 @@ export default function LandingPage({
               Book a 15-Min Pilot Fit Call
             </h2>
             <p className="lp__sub" style={{ maxWidth: '100%', textAlign: 'center', marginBottom: 0 }}>
-              Use the form below to lock a pilot slot, discuss workflow fit, and get started fast.
+              Use the form below to lock a pilot slot, discuss workflow fit, and move to launch quickly.
             </p>
 
             <div className="lp__contact-actions">
