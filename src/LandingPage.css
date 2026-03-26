@@ -829,6 +829,35 @@
   color: var(--text-hi);
 }
 
+.lp__business-contact {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(104, 165, 217, 0.2);
+  border-radius: 12px;
+  background: rgba(3, 11, 20, 0.45);
+  display: grid;
+  gap: 6px;
+}
+
+.lp__business-contact p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-mid);
+}
+
+.lp__business-contact strong {
+  color: var(--text-hi);
+}
+
+.lp__business-contact a {
+  color: var(--cyan-soft);
+  text-decoration: none;
+}
+
+.lp__business-contact a:hover {
+  color: var(--green);
+}
+
 .lp__refund-note {
   margin-top: 14px;
   font-size: 0.88rem;
