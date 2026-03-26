@@ -59,7 +59,7 @@ export default function BusinessPolicyPage() {
           { label: 'Contact', to: '/#feedback' },
         ]}
         actions={[
-          { label: 'Book 15-Min Call', href: `mailto:${CONTACT_EMAIL}`, variant: 'primary' },
+          { label: 'Email Support', href: `mailto:${CONTACT_EMAIL}`, variant: 'primary' },
         ]}
       />
 

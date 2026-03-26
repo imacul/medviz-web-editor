@@ -84,8 +84,8 @@ const BUYERS = [
 const PROCESS = [
   {
     n: '01',
-    title: 'Book a 15-minute call',
-    desc: 'We identify one case-review bottleneck to fix first and confirm pilot scope.',
+    title: 'Share one workflow need',
+    desc: 'Tell us the bottleneck by email and get an async setup recommendation.',
   },
   {
     n: '02',
@@ -127,7 +127,7 @@ const PACKAGES = [
     points: [
       'private portal and branded review experience',
       'up to 15 users',
-      'workflow tuning and onboarding call',
+      'workflow tuning and async onboarding support',
       'priority support during rollout',
     ],
   },
@@ -197,18 +197,18 @@ function scrollToSection(id) {
 }
 
 function openPilotEmail() {
-  const subject = encodeURIComponent('MedViz Pilot Sprint Request ($1,000)');
+  const subject = encodeURIComponent('MedViz Custom Setup Request');
   const body = encodeURIComponent(
     [
       'Hi Emmanuel,',
       '',
-      "I'm interested in starting a MedViz Pilot Sprint for my team.",
+      "I'm interested in custom MedViz setup support for my team.",
       '',
       'Organization:',
       'Use case:',
       'Team size:',
-      'Preferred start date:',
-      'Urgency (this week / this month):',
+      'Current workflow challenge:',
+      'Preferred timeline (optional):',
       '',
       'Thanks,',
     ].join('\n')
@@ -276,7 +276,7 @@ export default function LandingPage({
         ]}
         actions={[
           { label: 'Try MedViz Free', onClick: openFreeDemo, variant: 'primary' },
-          { label: 'Book 15-Min Call', onClick: openPilotEmail, variant: 'outline' },
+          { label: 'Email for Custom Setup', onClick: openPilotEmail, variant: 'outline' },
         ]}
       />
 
@@ -310,7 +310,7 @@ export default function LandingPage({
                 Watch 60-sec walkthrough
               </button>
               <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={openPilotEmail}>
-                Book optional guided pilot
+                Request custom setup by email
               </button>
             </div>
 
@@ -404,7 +404,7 @@ export default function LandingPage({
               Try MedViz Free Now - No Signup, No Call Needed
             </button>
             <button className="lp__btn lp__btn--outline" onClick={openPilotEmail}>
-              Need custom setup? Book optional pilot call
+              Need custom setup? Send details by email
             </button>
           </div>
         </div>
@@ -509,7 +509,7 @@ export default function LandingPage({
                   ))}
                 </ul>
                 <button className="lp__btn lp__btn--primary lp__btn--full" onClick={openPilotEmail}>
-                  Book {pkg.title}
+                  Request {pkg.title}
                 </button>
               </RevealCard>
             ))}
@@ -571,7 +571,8 @@ export default function LandingPage({
           <div>
             <h2>Start testing in minutes, not weeks</h2>
             <p>
-              Open free demo mode now with sample cases. If your team wants custom implementation, book a guided pilot.
+              Open free demo mode now with sample cases. If your team wants custom implementation, email your
+              workflow and get an async setup plan.
             </p>
           </div>
           <div className="lp__cta-stack">
@@ -579,7 +580,7 @@ export default function LandingPage({
               Try MedViz Free Now
             </button>
             <button className="lp__cta-plain" onClick={openPilotEmail}>
-              Book Optional Pilot Call
+              Email Custom Setup Request
             </button>
           </div>
         </div>
@@ -590,16 +591,16 @@ export default function LandingPage({
           <div className="lp__feedback-wrap">
             <p className="lp__label" style={{ textAlign: 'center' }}>Contact</p>
             <h2 className="lp__title" style={{ maxWidth: '100%', textAlign: 'center' }}>
-              Book a 15-Min Pilot Fit Call
+              Send your workflow and get setup guidance
             </h2>
             <p className="lp__sub" style={{ maxWidth: '100%', textAlign: 'center', marginBottom: 0 }}>
-              Use the form below to lock a pilot slot, discuss workflow fit, and move to launch quickly.
+              Use the form below to share your current workflow and receive async setup recommendations.
             </p>
 
             <div className="lp__contact-actions">
               <button className="lp__btn lp__btn--primary" onClick={openPilotEmail}>
                 <FiMail size={16} />
-                Request Pilot Call
+                Request Setup by Email
               </button>
               <button className="lp__btn lp__btn--outline" onClick={() => scrollToSection('screenshots')}>
                 <FiCamera size={16} />
@@ -662,7 +663,7 @@ export default function LandingPage({
             <button onClick={() => scrollToSection('pricing')}>Pricing</button>
           </li>
           <li>
-            <button onClick={openPilotEmail}>Book Call</button>
+            <button onClick={openPilotEmail}>Contact</button>
           </li>
           <li>
             <button onClick={openPolicyPage}>Policy</button>
