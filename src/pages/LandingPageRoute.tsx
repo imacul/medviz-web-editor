@@ -4,9 +4,9 @@ import { useLocation, useNavigate } from 'react-router';
 import LandingPage from '../LandingPage.jsx';
 import { useAuth } from '../features/auth/AuthProvider';
 
-const LANDING_TITLE = 'MedViz 3D Case Review Software for Oral Surgery and Implant Teams';
+const LANDING_TITLE = 'Free Browser-Based 3D Case Review for Oral Surgery and Implant Teams | MedViz';
 const LANDING_DESCRIPTION =
-  'MedViz is browser-based 3D case review software for oral and maxillofacial teams to review, measure, annotate, and share cases.';
+  'Try MedViz free with instant sample cases. Review, measure, annotate, share, and export reports in the browser. Optional guided pilots for custom setup.';
 const LANDING_URL = 'https://www.medviz3d.com/';
 const LANDING_IMAGE = 'https://www.medviz3d.com/medviz-social-share.png';
 

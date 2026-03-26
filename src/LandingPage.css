@@ -126,6 +126,18 @@
   box-shadow: 0 18px 38px rgba(98, 183, 255, 0.32);
 }
 
+.lp__btn--free {
+  background: linear-gradient(135deg, var(--green) 0%, #8bf6d1 52%, var(--cyan) 100%);
+  color: #04101d;
+  box-shadow: 0 18px 40px rgba(113, 242, 191, 0.32);
+  white-space: normal;
+  text-align: center;
+}
+
+.lp__btn--free:hover {
+  box-shadow: 0 22px 46px rgba(113, 242, 191, 0.44);
+}
+
 .lp__btn--outline {
   background: rgba(98, 183, 255, 0.06);
   color: var(--cyan-soft);
@@ -424,6 +436,32 @@
 
 .lp__signal-grid p {
   color: var(--text-mid);
+}
+
+.lp__walkthrough-bg {
+  background: linear-gradient(180deg, rgba(9, 23, 38, 0.96) 0%, rgba(11, 27, 46, 0.98) 100%);
+}
+
+.lp__walkthrough-wrap {
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(104, 165, 217, 0.22);
+  background: rgba(4, 14, 25, 0.9);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+}
+
+.lp__walkthrough-wrap video {
+  width: 100%;
+  display: block;
+  max-height: 620px;
+  background: #02070d;
+}
+
+.lp__walkthrough-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .lp__features-bg {
@@ -1064,6 +1102,14 @@
 
   .lp__outcome-strip {
     grid-template-columns: 1fr;
+  }
+
+  .lp__ctas {
+    width: 100%;
+  }
+
+  .lp__ctas .lp__btn {
+    width: 100%;
   }
 
   .lp__surface-card {

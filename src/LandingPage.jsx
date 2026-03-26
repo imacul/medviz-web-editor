@@ -12,8 +12,8 @@ import {
   FiFileText,
   FiLock,
   FiMail,
-  FiMapPin,
   FiMessageSquare,
+  FiPlay,
   FiScissors,
   FiShield,
   FiUploadCloud,
@@ -27,11 +27,13 @@ import ss3 from '../screenshots/Screenshot 2026-02-07 183405 - optimized.jpg';
 import ss4 from '../screenshots/Screenshot 2026-02-07 104323 - optimized.jpg';
 import ss5 from '../screenshots/Screenshot 2026-03-19 191802 - optimized.jpg';
 import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
+import walkthroughVideo from '../assets/MedViz 3D.mp4';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'hello@medviz3d.com';
 const CONTACT_PHONE = '+2348145803309';
 const POLICY_PAGE_PATH = '/business-profile-refund-policy';
+const DEMO_PAGE_PATH = '/demo';
 
 const OFFER_PILLARS = [
   {
@@ -219,6 +221,10 @@ function openPolicyPage() {
   window.location.href = POLICY_PAGE_PATH;
 }
 
+function openFreeDemo() {
+  window.location.href = DEMO_PAGE_PATH;
+}
+
 export default function LandingPage({
   onEnterEditor,
   onOpenDashboard,
@@ -253,9 +259,6 @@ export default function LandingPage({
     };
   }, []);
 
-  const appAction = isAuthenticated ? onOpenDashboard : onLogin;
-  const appActionLabel = isAuthenticated ? 'Open workspace' : 'See live app';
-
   return (
     <div className="lp">
       <div className="lp__grid-bg" />
@@ -264,6 +267,7 @@ export default function LandingPage({
       <SiteHeader
         onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         items={[
+          { label: 'Free Demo', href: '/demo' },
           { label: 'Offer', href: '#offer' },
           { label: 'Pilot Flow', href: '#workflow' },
           { label: 'Pricing', href: '#pricing' },
@@ -271,8 +275,8 @@ export default function LandingPage({
           { label: 'Contact', href: '#feedback' },
         ]}
         actions={[
-          { label: appActionLabel, onClick: appAction, variant: 'outline' },
-          { label: 'Book 15-Min Call', onClick: openPilotEmail, variant: 'primary' },
+          { label: 'Try MedViz Free', onClick: openFreeDemo, variant: 'primary' },
+          { label: 'Book 15-Min Call', onClick: openPilotEmail, variant: 'outline' },
         ]}
       />
 
@@ -282,44 +286,45 @@ export default function LandingPage({
           <div className="lp__hero-copy">
             <div className="lp__badge">
               <span className="lp__badge-dot" />
-              2 pilot slots open this month for oral surgery and implant teams
+              Free access live now - no signup, no call needed
             </div>
 
             <h1>
-              3D Case Review Software
+              Free browser-based 3D case review
               <br />
-              <span className="lp__highlight">for Oral Surgery and Implant Teams</span>
+              <span className="lp__highlight">for oral surgery and implant teams</span>
             </h1>
 
             <p className="lp__hero-sub">
-              MedViz helps oral and maxillofacial clinics review, measure, annotate, and share complex
-              3D cases in the browser. Start with one paid pilot sprint, prove fit on a real case workflow,
-              then expand with confidence.
+              Measure, annotate, collaborate via links, and generate reports. Try with sample cases instantly.
+              Paid guided pilots are available only if you want custom setup for your team.
             </p>
 
             <div className="lp__ctas">
-              <button className="lp__btn lp__btn--primary lp__btn--lg" onClick={openPilotEmail}>
-                Book 15-Min Workflow Call
+              <button className="lp__btn lp__btn--free lp__btn--lg" onClick={openFreeDemo}>
+                Try MedViz Free Now - No Signup, No Call Needed
                 <FiArrowRight size={16} />
               </button>
-              <button className="lp__btn lp__btn--outline lp__btn--lg" onClick={() => scrollToSection('pricing')}>
-                Start at $1,000
+              <button className="lp__btn lp__btn--outline lp__btn--lg" onClick={() => scrollToSection('walkthrough')}>
+                <FiPlay size={15} />
+                Watch 60-sec walkthrough
               </button>
-              <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={appAction}>
-                {appActionLabel}
+              <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={openPilotEmail}>
+                Book optional guided pilot
               </button>
             </div>
 
             <div className="lp__tags">
               {[
-                '7-day pilot sprint',
-                'Starts at $1,000',
+                'Free instant demo',
+                'No signup required',
+                'No call required',
                 '3D case review software',
                 'No local software installs',
                 'Annotations and measurements',
                 'Case sharing links',
                 'Exportable review reports',
-                'Built for OMFS and implant teams',
+                'Optional paid custom pilot',
               ].map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
@@ -352,15 +357,15 @@ export default function LandingPage({
             <div className="lp__surface-card lp__surface-card--top">
               <FiLock size={16} />
               <div>
-                <strong>Private pilot setup</strong>
-                <span>Configured for a real team workflow</span>
+                <strong>Free instant access</strong>
+                <span>Open demo cases now without signup</span>
               </div>
             </div>
             <div className="lp__surface-card lp__surface-card--bottom">
               <FiClock size={16} />
               <div>
                 <strong>Fast to evaluate</strong>
-                <span>Start with a de-identified case and tighten from there</span>
+                <span>Measure, annotate, share, and export in minutes</span>
               </div>
             </div>
           </div>
@@ -371,21 +376,46 @@ export default function LandingPage({
         <div className="lp__signal-grid">
           <div>
           <p className="lp__signal-kicker">Why Teams Buy MedViz</p>
-          <h2>Faster case review, clearer decisions, and less rollout friction.</h2>
+          <h2>Try first for free, then pay only if you need custom rollout support.</h2>
         </div>
         <p>
-            Instead of forcing a full software migration, teams start with one paid sprint, validate
-            workflow value on real cases, and expand only when results are clear.
+            Teams can self-test with instant sample cases before any sales call. Guided pilots remain available
+            for organizations that want custom setup and onboarding.
         </p>
       </div>
     </section>
 
+      <section id="walkthrough" className="lp__walkthrough-bg">
+        <div className="lp__inner">
+          <p className="lp__label">Workflow Video</p>
+          <h2 className="lp__title">See the full MedViz workflow in under 90 seconds</h2>
+          <p className="lp__sub">
+            This walkthrough shows instant demo loading, measurement, annotation, share-link flow, team comment simulation,
+            and report export.
+          </p>
+          <div className="lp__walkthrough-wrap">
+            <video controls preload="metadata" playsInline poster={ss6}>
+              <source src={`${walkthroughVideo}#t=0,90`} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div className="lp__walkthrough-actions">
+            <button className="lp__btn lp__btn--free" onClick={openFreeDemo}>
+              Try MedViz Free Now - No Signup, No Call Needed
+            </button>
+            <button className="lp__btn lp__btn--outline" onClick={openPilotEmail}>
+              Need custom setup? Book optional pilot call
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section id="offer" className="lp__features-bg">
         <div className="lp__inner">
           <p className="lp__label">Offer</p>
-          <h2 className="lp__title">What the $1,000 Pilot Sprint includes</h2>
+          <h2 className="lp__title">Optional guided pilot if you want custom setup</h2>
           <p className="lp__sub">
-            Start with one focused setup built around a real workflow bottleneck and validate value quickly.
+            Use free demo mode first. If your team wants implementation support, choose a guided pilot.
           </p>
           <div className="lp__features-grid">
             {OFFER_PILLARS.map(({ Icon, title, desc }) => (
@@ -539,17 +569,17 @@ export default function LandingPage({
       <section className="lp__cta-band">
         <div className="lp__cta-inner">
           <div>
-            <h2>Need this live before month-end?</h2>
+            <h2>Start testing in minutes, not weeks</h2>
             <p>
-              Book a short call, launch one private pilot sprint, and decide with real case workflow feedback.
+              Open free demo mode now with sample cases. If your team wants custom implementation, book a guided pilot.
             </p>
           </div>
           <div className="lp__cta-stack">
-            <button className="lp__cta-glow" onClick={openPilotEmail}>
-              Claim a Pilot Slot
+            <button className="lp__cta-glow" onClick={openFreeDemo}>
+              Try MedViz Free Now
             </button>
-            <button className="lp__cta-plain" onClick={appAction}>
-              {appActionLabel}
+            <button className="lp__cta-plain" onClick={openPilotEmail}>
+              Book Optional Pilot Call
             </button>
           </div>
         </div>
@@ -622,6 +652,9 @@ export default function LandingPage({
           <p className="lp__powered-by">Powered by PMC Projects Mastery Connect.</p>
         </div>
         <ul className="lp__footer-links">
+          <li>
+            <button onClick={openFreeDemo}>Free Demo</button>
+          </li>
           <li>
             <button onClick={() => scrollToSection('offer')}>Offer</button>
           </li>
