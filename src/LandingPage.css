@@ -814,6 +814,30 @@
   margin-bottom: 12px;
 }
 
+.lp__compliance-preview {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.lp__policy-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.lp__policy-actions a {
+  color: var(--cyan-soft);
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.lp__policy-actions a:hover {
+  color: var(--green);
+}
+
 .lp__compliance-list {
   list-style: none;
   display: grid;

@@ -31,9 +31,7 @@ import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'hello@medviz3d.com';
 const CONTACT_PHONE = '+2348145803309';
-const MEDVIZ_URL = 'https://www.medviz3d.com';
-const FOUNDER_SOCIAL_URL = 'https://x.com/ImmaculRichie';
-const PMC_SOCIAL_URL = 'https://x.com/ProjMastery';
+const POLICY_PAGE_PATH = '/business-profile-refund-policy';
 
 const OFFER_PILLARS = [
   {
@@ -215,6 +213,10 @@ function openPilotEmail() {
   );
 
   window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+}
+
+function openPolicyPage() {
+  window.location.href = POLICY_PAGE_PATH;
 }
 
 export default function LandingPage({
@@ -577,42 +579,16 @@ export default function LandingPage({
 
             <div className="lp__compliance-card">
               <h3>Business Profile and Refund Policy</h3>
-              <ul className="lp__compliance-list">
-                <li>
-                  <strong>Account purpose:</strong> Receive payments for MedViz pilot sprints and software
-                  services delivered under PMC Projects Mastery Connect (PMC).
-                </li>
-                <li>
-                  <strong>Business description:</strong> MedViz is a browser-based 3D review platform for oral
-                  and maxillofacial workflows.
-                </li>
-                <li>
-                  <strong>Estimated monthly volume:</strong> USD 1,000 to USD 5,000 during pilot rollout.
-                </li>
-              </ul>
-              <div className="lp__business-contact">
-                <p>
-                  <strong>Support email:</strong> <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-                </p>
-                <p>
-                  <strong>Business phone:</strong> <a href={`tel:${CONTACT_PHONE}`}>{CONTACT_PHONE}</a>
-                </p>
-              </div>
-              <p className="lp__refund-note">
-                Refund policy: pilot fees are refundable before onboarding starts; after onboarding begins,
-                completed work is billed based on delivered milestones. Monthly plans can be canceled before the
-                next billing cycle. For refund requests, contact <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+              <p className="lp__compliance-preview">
+                View account purpose, business description, support contact, refund terms, and social/business
+                links on the dedicated policy page.
               </p>
-              <div className="lp__social-links">
-                <a href={MEDVIZ_URL} target="_blank" rel="noreferrer">
-                  Website: medviz3d.com
-                </a>
-                <a href={FOUNDER_SOCIAL_URL} target="_blank" rel="noreferrer">
-                  Founder: x.com/ImmaculRichie
-                </a>
-                <a href={PMC_SOCIAL_URL} target="_blank" rel="noreferrer">
-                  PMC: x.com/ProjMastery
-                </a>
+              <div className="lp__policy-actions">
+                <button className="lp__btn lp__btn--outline" onClick={openPolicyPage}>
+                  Open Policy Page
+                </button>
+                <a href={`mailto:${CONTACT_EMAIL}`}>Support: {CONTACT_EMAIL}</a>
+                <a href={`tel:${CONTACT_PHONE}`}>Phone: {CONTACT_PHONE}</a>
               </div>
             </div>
 
@@ -654,6 +630,9 @@ export default function LandingPage({
           </li>
           <li>
             <button onClick={openPilotEmail}>Book Call</button>
+          </li>
+          <li>
+            <button onClick={openPolicyPage}>Policy</button>
           </li>
         </ul>
       </footer>

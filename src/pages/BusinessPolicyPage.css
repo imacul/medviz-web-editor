@@ -1,0 +1,157 @@
+.policy-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 12% 5%, rgba(72, 146, 230, 0.16), transparent 45%), #04101d;
+  color: #eaf5ff;
+}
+
+.policy-page__bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(97, 153, 212, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(97, 153, 212, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.16;
+}
+
+.policy-page__main {
+  position: relative;
+  z-index: 1;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 120px 20px 56px;
+}
+
+.policy-page__card {
+  border: 1px solid rgba(104, 165, 217, 0.24);
+  border-radius: 24px;
+  background: rgba(7, 23, 40, 0.84);
+  box-shadow: 0 24px 80px rgba(1, 8, 16, 0.42);
+  padding: 30px;
+}
+
+.policy-page__eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #6cc5ff;
+}
+
+.policy-page__card h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  line-height: 1.2;
+}
+
+.policy-page__sub {
+  margin: 0;
+  color: #b7d0e8;
+  line-height: 1.62;
+}
+
+.policy-page__grid {
+  margin-top: 24px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.policy-page__grid article,
+.policy-page__refund,
+.policy-page__social {
+  border: 1px solid rgba(104, 165, 217, 0.2);
+  border-radius: 16px;
+  background: rgba(4, 17, 30, 0.66);
+  padding: 18px;
+}
+
+.policy-page__card h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.policy-page__card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.policy-page__card li {
+  color: #b6cde3;
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.policy-page__card strong {
+  color: #ecf6ff;
+}
+
+.policy-page__grid li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.policy-page a {
+  color: #71c7ff;
+  text-decoration: none;
+}
+
+.policy-page a:hover {
+  color: #7ef3cc;
+}
+
+.policy-page__refund,
+.policy-page__social {
+  margin-top: 14px;
+}
+
+.policy-page__refund p {
+  margin: 0;
+  color: #b6cde3;
+  line-height: 1.68;
+}
+
+.policy-page__refund p + p {
+  margin-top: 10px;
+}
+
+.policy-page__links {
+  display: grid;
+  gap: 10px;
+}
+
+.policy-page__footer {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  max-width: 980px;
+  padding: 0 20px 38px;
+}
+
+.policy-page__footer p {
+  margin: 0;
+  color: #9ab6cf;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 860px) {
+  .policy-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .policy-page__main {
+    padding-top: 100px;
+  }
+
+  .policy-page__card {
+    padding: 22px 16px;
+    border-radius: 18px;
+  }
+}

@@ -12,6 +12,7 @@ const EditorPage = lazy(loadEditorPage);
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const CasePage = lazy(() => import('./pages/CasePage'));
 const LandingPageRoute = lazy(() => import('./pages/LandingPageRoute'));
+const BusinessPolicyPage = lazy(() => import('./pages/BusinessPolicyPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -27,6 +28,7 @@ export default function App() {
     <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<LandingPageRoute />} />
+        <Route path="/business-profile-refund-policy" element={<BusinessPolicyPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
