@@ -1,6 +1,6 @@
-import { Suspense, lazy, useEffect, useMemo, useState, type ComponentType, type FormEvent } from 'react';
-import { FiCheckCircle, FiCopy, FiMessageCircle } from 'react-icons/fi';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from 'react';
+import { FiCopy, FiMessageCircle, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router';
 
 import { loadMedical3DCanvas } from './preload';
 import './DemoPage.css';
@@ -21,137 +21,114 @@ type DemoComment = {
   timestamp: string;
 };
 
-type DemoCase = {
-  id: string;
-  title: string;
-  summary: string;
-  workflowFocus: string;
-  modelUrl: string;
-  fileName: string;
-  starterComments: DemoComment[];
-};
-
 const Medical3DCanvas = lazy(loadMedical3DCanvas);
 
 const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
   initialModelSource?: ModelSource;
   onGoHome: () => void;
   readOnly?: boolean;
+  showShareToggle?: boolean;
+  sharePanelOpen?: boolean;
+  onToggleSharePanel?: () => void;
+  showCommentsToggle?: boolean;
+  commentsPanelOpen?: boolean;
+  onToggleCommentsPanel?: () => void;
+  startTourSignal?: number;
 }>;
 
-const DEMO_CASES: DemoCase[] = [
+const INITIAL_COMMENTS: DemoComment[] = [
   {
-    id: 'implant-planning',
-    title: 'Sample Case 1: Implant Planning',
-    summary: 'Anonymized implant-planning geometry for quick measurement and annotation testing.',
-    workflowFocus: 'Measure distances, place markers, and export a PDF report.',
-    modelUrl: '/demo-cases/implant-planning-case.obj',
-    fileName: 'implant-planning-case.obj',
-    starterComments: [
-      {
-        author: 'Lead Surgeon',
-        text: 'Please verify implant path clearance before final review.',
-        timestamp: '09:10',
-      },
-      {
-        author: 'Implant Coordinator',
-        text: 'Add marker near posterior ridge and include in report export.',
-        timestamp: '09:14',
-      },
-    ],
-  },
-  {
-    id: 'jaw-trauma',
-    title: 'Sample Case 2: Jaw Trauma Reconstruction',
-    summary: 'Anonymized fracture/reconstruction style geometry to test review and communication flow.',
-    workflowFocus: 'Annotate fracture gap, check alignment, and share a link with your team.',
-    modelUrl: '/demo-cases/jaw-trauma-reconstruction-case.obj',
-    fileName: 'jaw-trauma-reconstruction-case.obj',
-    starterComments: [
-      {
-        author: 'Trauma Surgeon',
-        text: 'Mark segment offset before we align plate position.',
-        timestamp: '10:03',
-      },
-    ],
-  },
-  {
-    id: 'team-sharing',
-    title: 'Sample Case 3: Team Sharing Workflow',
-    summary: 'Anonymized collaboration case for simulating shared review and handoff comments.',
-    workflowFocus: 'Create annotations, copy shareable link, and simulate cross-team feedback.',
-    modelUrl: '/demo-cases/team-sharing-case.obj',
-    fileName: 'team-sharing-case.obj',
-    starterComments: [
-      {
-        author: 'Lab Technician',
-        text: 'Ready for surgeon review. Please confirm highlighted zones.',
-        timestamp: '11:22',
-      },
-      {
-        author: 'Review Surgeon',
-        text: 'Looks good so far. Add final note and export report PDF.',
-        timestamp: '11:30',
-      },
-    ],
+    author: 'Team Reviewer',
+    text: 'Use this panel to simulate collaboration notes while reviewing your own de-identified model.',
+    timestamp: '09:00',
   },
 ];
 
-const CASE_LOOKUP = new Map(DEMO_CASES.map((item) => [item.id, item]));
-
-function getSafeCaseId(value: string | null) {
-  if (!value) return DEMO_CASES[0].id;
-  return CASE_LOOKUP.has(value) ? value : DEMO_CASES[0].id;
-}
+const INTRO_CARD_AUTO_DISMISS_MS = 15000;
+const INTRO_CARD_FADE_MS = 420;
 
 export default function DemoPage() {
+  type DemoPanelMode = 'share' | 'comments';
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeCaseId, setActiveCaseId] = useState(() => getSafeCaseId(searchParams.get('case')));
-  const [comments, setComments] = useState<DemoComment[]>(() => {
-    const safe = getSafeCaseId(searchParams.get('case'));
-    return [...(CASE_LOOKUP.get(safe)?.starterComments ?? [])];
-  });
+  const [comments, setComments] = useState<DemoComment[]>(INITIAL_COMMENTS);
   const [author, setAuthor] = useState('Reviewer');
   const [commentText, setCommentText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState<DemoPanelMode>('comments');
+  const [showIntroCard, setShowIntroCard] = useState(true);
+  const [introCardClosing, setIntroCardClosing] = useState(false);
+  const [tourLaunchCount, setTourLaunchCount] = useState(0);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
+  const commentsCardRef = useRef<HTMLDivElement | null>(null);
 
-  const activeCase = CASE_LOOKUP.get(activeCaseId) ?? DEMO_CASES[0];
   const shareUrl = useMemo(() => {
-    if (typeof window === 'undefined') return `https://www.medviz3d.com/demo?case=${activeCaseId}`;
-    return `${window.location.origin}/demo?case=${activeCaseId}`;
-  }, [activeCaseId]);
-
-  const initialModelSource = useMemo<ModelSource>(
-    () => ({
-      kind: 'remote',
-      url: activeCase.modelUrl,
-      fileName: activeCase.fileName,
-    }),
-    [activeCase.fileName, activeCase.modelUrl]
-  );
+    if (typeof window === 'undefined') return 'https://www.medviz3d.com/demo';
+    return `${window.location.origin}/demo`;
+  }, []);
 
   useEffect(() => {
     document.body.classList.add('editor-mode');
-    document.title = 'MedViz Free Demo - Instant Sample Cases';
+    document.title = 'MedViz Free Demo - Bring Your Own Model';
     return () => {
       document.body.classList.remove('editor-mode');
     };
   }, []);
 
   useEffect(() => {
-    const incoming = getSafeCaseId(searchParams.get('case'));
-    if (incoming !== activeCaseId) {
-      setActiveCaseId(incoming);
-      setComments([...(CASE_LOOKUP.get(incoming)?.starterComments ?? [])]);
-    }
-  }, [activeCaseId, searchParams]);
+    if (!panelOpen) return;
+    const target = panelMode === 'share' ? shareCardRef.current : commentsCardRef.current;
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [panelMode, panelOpen]);
 
-  const chooseCase = (caseId: string) => {
-    setActiveCaseId(caseId);
-    setComments([...(CASE_LOOKUP.get(caseId)?.starterComments ?? [])]);
-    setCopied(false);
-    setSearchParams({ case: caseId }, { replace: true });
+  useEffect(() => {
+    if (!showIntroCard || introCardClosing) return;
+
+    const closeTimer = window.setTimeout(() => {
+      setIntroCardClosing(true);
+    }, INTRO_CARD_AUTO_DISMISS_MS);
+
+    return () => {
+      window.clearTimeout(closeTimer);
+    };
+  }, [introCardClosing, showIntroCard]);
+
+  useEffect(() => {
+    if (!introCardClosing) return;
+
+    const removeTimer = window.setTimeout(() => {
+      setShowIntroCard(false);
+    }, INTRO_CARD_FADE_MS);
+
+    return () => {
+      window.clearTimeout(removeTimer);
+    };
+  }, [introCardClosing]);
+
+  const handleToggleSharePanel = () => {
+    if (panelOpen && panelMode === 'share') {
+      setPanelOpen(false);
+      return;
+    }
+    setPanelMode('share');
+    setPanelOpen(true);
+  };
+
+  const handleToggleCommentsPanel = () => {
+    if (panelOpen && panelMode === 'comments') {
+      setPanelOpen(false);
+      return;
+    }
+    setPanelMode('comments');
+    setPanelOpen(true);
+  };
+
+  const dismissIntroCard = () => {
+    setIntroCardClosing(true);
+  };
+
+  const handleStartTour = () => {
+    setTourLaunchCount((current) => current + 1);
   };
 
   const copyShareUrl = async () => {
@@ -182,43 +159,50 @@ export default function DemoPage() {
     <div className="demo-page">
       <Suspense fallback={null}>
         <Medical3DCanvasView
-          initialModelSource={initialModelSource}
           onGoHome={() => navigate('/')}
           readOnly={false}
+          startTourSignal={tourLaunchCount}
+          showShareToggle
+          sharePanelOpen={panelOpen && panelMode === 'share'}
+          onToggleSharePanel={handleToggleSharePanel}
+          showCommentsToggle
+          commentsPanelOpen={panelOpen && panelMode === 'comments'}
+          onToggleCommentsPanel={handleToggleCommentsPanel}
         />
       </Suspense>
 
-      <aside className="demo-panel">
-        <div className="demo-panel__card">
-          <p className="demo-panel__eyebrow">Free Demo Mode</p>
-          <h1>Try MedViz now. No signup required.</h1>
-          <p className="demo-panel__sub">
-            Pick a sample case and start reviewing immediately. Rotate, zoom, measure, annotate, export PDF, and
-            simulate team collaboration in one browser session.
-          </p>
-        </div>
-
-        <div className="demo-panel__card">
-          <h2>Sample Cases</h2>
-          <div className="demo-panel__cases">
-            {DEMO_CASES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`demo-panel__case ${item.id === activeCaseId ? 'demo-panel__case--active' : ''}`}
-                onClick={() => chooseCase(item.id)}
-              >
-                <strong>{item.title}</strong>
-                <span>{item.summary}</span>
-              </button>
-            ))}
+      <aside
+        id="demo-panel"
+        className={`demo-panel ${panelOpen ? 'demo-panel--open' : 'demo-panel--closed'}`}
+      >
+        {showIntroCard ? (
+          <div
+            className={`demo-panel__card demo-panel__intro ${
+              introCardClosing ? 'demo-panel__intro--closing' : ''
+            }`}
+          >
+            <button
+              type="button"
+              className="demo-panel__close"
+              onClick={dismissIntroCard}
+              aria-label="Dismiss free demo message"
+              title="Dismiss"
+            >
+              <FiX size={16} />
+            </button>
+            <p className="demo-panel__eyebrow">Free Demo Mode</p>
+            <h1>Try MedViz now. No signup required.</h1>
+            <p className="demo-panel__sub">
+              Import your own de-identified STL, OBJ, or PLY model and start reviewing immediately. Rotate, zoom,
+              measure, annotate, export PDF, and simulate team collaboration in one browser session.
+            </p>
           </div>
-          <p className="demo-panel__focus">
-            <strong>Workflow focus:</strong> {activeCase.workflowFocus}
-          </p>
-        </div>
+        ) : null}
 
-        <div className="demo-panel__card">
+        <div
+          ref={shareCardRef}
+          className={`demo-panel__card ${panelMode === 'share' ? 'demo-panel__card--active' : ''}`}
+        >
           <h2>Shareable Case Link (Simulated)</h2>
           <div className="demo-panel__share">
             <input value={shareUrl} readOnly aria-label="Shareable demo link" />
@@ -229,7 +213,10 @@ export default function DemoPage() {
           </div>
         </div>
 
-        <div className="demo-panel__card">
+        <div
+          ref={commentsCardRef}
+          className={`demo-panel__card ${panelMode === 'comments' ? 'demo-panel__card--active' : ''}`}
+        >
           <h2>Team Comments (Simulated)</h2>
           <ul className="demo-panel__comments">
             {comments.map((item, index) => (
@@ -265,33 +252,22 @@ export default function DemoPage() {
         </div>
 
         <div className="demo-panel__card">
-          <h2>Quick Action Checklist</h2>
-          <ul className="demo-panel__checklist">
-            <li>
-              <FiCheckCircle size={14} />
-              Rotate/zoom the 3D model
-            </li>
-            <li>
-              <FiCheckCircle size={14} />
-              Use Measure for distance checks
-            </li>
-            <li>
-              <FiCheckCircle size={14} />
-              Add annotations in Annotate mode
-            </li>
-            <li>
-              <FiCheckCircle size={14} />
-              Copy shareable case link
-            </li>
-            <li>
-              <FiCheckCircle size={14} />
-              Add a simulated team comment
-            </li>
-            <li>
-              <FiCheckCircle size={14} />
-              Export Report - PDF from the top bar
-            </li>
-          </ul>
+          <div className="demo-panel__tour-header">
+            <div>
+              <h2>Guided Editor Tour</h2>
+              <p className="demo-panel__tour-copy">
+                Launch a step-by-step walkthrough that opens the right panel for import, navigation, measuring,
+                annotations, sharing, comments, and export.
+              </p>
+            </div>
+            <button type="button" className="demo-panel__tour-launch" onClick={handleStartTour}>
+              Start Tour
+            </button>
+          </div>
+
+          <div className="demo-panel__tour-note">
+            The same guided tour is also available from the editor top bar for authenticated users.
+          </div>
         </div>
       </aside>
     </div>

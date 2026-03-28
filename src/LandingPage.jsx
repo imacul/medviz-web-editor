@@ -494,10 +494,9 @@ export default function LandingPage({
                 <div className="lp__price-top">
                   <p className="lp__price-title">{pkg.title}</p>
                   <div className="lp__price-line">
-                    <span className="lp__price-value">{pkg.price}</span>
                     <span className="lp__price-cadence">{pkg.cadence}</span>
                   </div>
-                  <p className="lp__price-support">{pkg.support}</p>
+                  <p className="lp__price-support">Pricing shared on request</p>
                 </div>
                 <p className="lp__price-summary">{pkg.summary}</p>
                 <ul className="lp__price-points">
