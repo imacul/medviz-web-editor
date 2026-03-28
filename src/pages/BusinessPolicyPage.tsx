@@ -84,9 +84,6 @@ export default function BusinessPolicyPage() {
                   <strong>Business description:</strong> MedViz is a browser-based 3D review platform for oral
                   and maxillofacial workflows.
                 </li>
-                <li>
-                  <strong>Estimated monthly volume:</strong> USD 1,000 to USD 5,000 during pilot rollout.
-                </li>
               </ul>
             </article>
 
