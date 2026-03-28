@@ -33,7 +33,16 @@ const TopBar = ({
   onExportReportPdf,
   onGoHome,
   isCompact = false,
-  showSceneSelector = true
+  showSceneSelector = true,
+  showShareToggle = false,
+  sharePanelOpen = false,
+  onToggleSharePanel,
+  showCommentsToggle = false,
+  commentsPanelOpen = false,
+  onToggleCommentsPanel,
+  showTourToggle = true,
+  tourOpen = false,
+  onToggleTour
 }) => {
   const palette = getUiPalette(activeTheme, theme);
   const [openMenu, setOpenMenu] = useState(null);
@@ -74,6 +83,7 @@ const TopBar = ({
 
   return (
     <div
+      data-tour-id="editor-topbar"
       style={{
         position: 'absolute',
         top: 0,
@@ -125,6 +135,7 @@ const TopBar = ({
       <button
         onClick={readOnly ? undefined : onImportClick}
         disabled={isImporting || readOnly}
+        data-tour-id="import-button"
         style={{
           padding: isCompact ? '8px 11px' : '8px 12px',
           backgroundColor: readOnly ? 'rgba(255,255,255,0.12)' : theme.accent,
@@ -183,6 +194,39 @@ const TopBar = ({
         <button onClick={() => setShowToolsPanel(!showToolsPanel)} style={getToolButtonStyle(showToolsPanel, palette)}>
           Tools
         </button>
+
+        {showTourToggle && onToggleTour ? (
+          <button
+            onClick={onToggleTour}
+            data-tour-id="tour-button"
+            style={getToolButtonStyle(tourOpen, palette)}
+            type="button"
+          >
+            Tour
+          </button>
+        ) : null}
+
+        {showShareToggle ? (
+          <button
+            onClick={onToggleSharePanel}
+            data-tour-id="share-button"
+            style={getToolButtonStyle(sharePanelOpen, palette)}
+            type="button"
+          >
+            Share Link
+          </button>
+        ) : null}
+
+        {showCommentsToggle ? (
+          <button
+            onClick={onToggleCommentsPanel}
+            data-tour-id="comments-button"
+            style={getToolButtonStyle(commentsPanelOpen, palette)}
+            type="button"
+          >
+            Team Comments
+          </button>
+        ) : null}
       </div>
 
       <div
@@ -199,6 +243,7 @@ const TopBar = ({
         <div style={{ position: 'relative', display: 'inline-flex' }}>
           <button
             onClick={() => setOpenMenu(openMenu === 'export' ? null : 'export')}
+            data-tour-id="export-button"
             style={getToolButtonStyle(openMenu === 'export', palette)}
             type="button"
           >
@@ -251,6 +296,7 @@ const TopBar = ({
         <div style={{ position: 'relative', display: 'inline-flex' }}>
           <button
             onClick={() => setOpenMenu(openMenu === 'report' ? null : 'report')}
+            data-tour-id="report-button"
             style={getToolButtonStyle(openMenu === 'report', palette)}
             type="button"
           >

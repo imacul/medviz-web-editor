@@ -32,6 +32,7 @@ const ModelInfoPanel = ({
 
   return (
     <div
+      data-tour-id="model-info-panel"
       style={{
         ...getPanelStyle(activeTheme, showSlicerPanel ? '380px' : '80px', 'right', {
           isMobile,

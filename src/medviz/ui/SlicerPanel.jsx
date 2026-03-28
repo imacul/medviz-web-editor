@@ -25,6 +25,7 @@ const SlicerPanel = ({
 
   return (
     <div
+      data-tour-id="slicer-panel"
       style={{
         ...getPanelStyle(activeTheme, '80px', 'right', { isMobile, isTablet }),
         background: palette.panelBg,

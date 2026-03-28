@@ -97,6 +97,13 @@ const Medical3DCanvas = ({
   initialEditorState = null,
   onEditorStateChange = null,
   externalEditorState = null,
+  startTourSignal = 0,
+  showShareToggle = false,
+  sharePanelOpen = false,
+  onToggleSharePanel = null,
+  showCommentsToggle = false,
+  commentsPanelOpen = false,
+  onToggleCommentsPanel = null,
 }) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
@@ -182,6 +189,32 @@ const Medical3DCanvas = ({
   const [includeOverlaysInScreenshot, setIncludeOverlaysInScreenshot] = useState(true);
   const [fps, setFps] = useState(60);
   const [toasts, setToasts] = useState([]);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [tourTargetRect, setTourTargetRect] = useState(null);
+  const [tourCardRect, setTourCardRect] = useState(null);
+  const tourCardRef = useRef(null);
+
+  const hasLoadedModel = Boolean(importedModel || initialModelSource || persistentModelRef.current);
+
+  const openTour = () => {
+    setTourStepIndex(0);
+    setTourOpen(true);
+  };
+
+  const closeTour = () => {
+    setTourOpen(false);
+  };
+
+  const toggleTour = () => {
+    setTourOpen((current) => {
+      if (current) {
+        return false;
+      }
+      setTourStepIndex(0);
+      return true;
+    });
+  };
 
   useEffect(() => {
     let favicon = document.querySelector("link[rel='icon']");
@@ -193,6 +226,11 @@ const Medical3DCanvas = ({
     favicon.setAttribute('type', 'image/svg+xml');
     favicon.setAttribute('href', medvizLogo);
   }, []);
+
+  useEffect(() => {
+    if (!startTourSignal) return;
+    openTour();
+  }, [startTourSignal]);
 
   // Apply permanent cut to the geometry
   const applyPermanentCut = () => {
@@ -2549,9 +2587,316 @@ const Medical3DCanvas = ({
     setShowSlicerPanel(false);
   }, [isMobileViewport]);
 
+  const tourSteps = [];
+
+  if (!readOnly) {
+    tourSteps.push({
+      id: 'import',
+      title: hasLoadedModel ? 'Import or replace a patient model' : 'Import your first patient model',
+      body: hasLoadedModel
+        ? 'Use the Import Model button in the top bar whenever you want to replace the current STL, OBJ, or PLY file.'
+        : 'Start from the Import Model button in the top bar to load a de-identified STL, OBJ, or PLY file into the workspace.',
+      detail: 'Top bar > Import Model',
+    });
+  }
+
+  tourSteps.push({
+    id: 'navigate',
+    title: 'Move around the 3D scene',
+    body: 'Left-drag to orbit, right-drag to pan, and use the mouse wheel or trackpad to zoom in on anatomy.',
+    detail: 'Try rotating the model until the anatomy is oriented the way you expect.',
+  });
+
+  if (!readOnly) {
+    tourSteps.push(
+      {
+        id: 'measure',
+        title: 'Measure anatomy or implant distances',
+        body: 'The tour opens the Tools panel in Measure mode so you can click two points on the model and capture a distance.',
+        detail: 'Tools > Measure, then click two points on the surface.',
+      },
+      {
+        id: 'annotate',
+        title: 'Drop annotations and review markers',
+        body: 'Switch to Annotate mode to place markers, rename them, and export a simple marker list for handoff.',
+        detail: 'Tools > Annotate, then click the model to add a marker.',
+      },
+      {
+        id: 'slice',
+        title: 'Inspect internal geometry with slicing or trim',
+        body: 'Open the slicer or trim workflow when you need cross-sections, clipping, or controlled material removal.',
+        detail: 'Tools > Slice or Trim to inspect internal regions.',
+      }
+    );
+  }
+
+  tourSteps.push({
+    id: 'model-info',
+    title: 'Confirm orientation and unit assumptions',
+    body: 'Model Info lets you confirm import scale, units, and anatomical axes before you rely on measurements clinically.',
+    detail: 'Open Model Info and confirm +X / +Y / +Z orientation.',
+  });
+
+  if (showShareToggle) {
+    tourSteps.push({
+      id: 'share',
+      title: 'Share the case link with collaborators',
+      body: 'Use the Share Link drawer to copy or review the case URL you can hand off to a teammate.',
+      detail: 'Top bar > Share Link',
+    });
+  }
+
+  if (showCommentsToggle) {
+    tourSteps.push({
+      id: 'comments',
+      title: 'Coordinate review notes with comments',
+      body: 'The comments area is where the team can capture review observations, questions, and handoff notes.',
+      detail: 'Top bar > Team Comments',
+    });
+  }
+
+  tourSteps.push({
+    id: 'export',
+    title: 'Export the deliverable you need',
+    body: 'Use Export for STL, OBJ, or PNG output and use Report when you need HTML or PDF review summaries.',
+    detail: 'Top bar > Export or Report',
+  });
+
+  const currentTourStep = tourSteps[tourStepIndex] ?? null;
+  const currentTourStepId = currentTourStep?.id ?? null;
+  const currentTourTargetId =
+    currentTourStepId === 'import'
+      ? 'import-button'
+      : currentTourStepId === 'navigate'
+        ? 'canvas-viewport'
+        : currentTourStepId === 'measure'
+          ? 'measure-button'
+          : currentTourStepId === 'annotate'
+            ? 'annotate-button'
+            : currentTourStepId === 'slice'
+              ? 'slicer-panel'
+              : currentTourStepId === 'model-info'
+                ? 'model-info-panel'
+                : currentTourStepId === 'share'
+                  ? 'share-button'
+                  : currentTourStepId === 'comments'
+                    ? 'comments-button'
+                    : currentTourStepId === 'export'
+                      ? 'export-button'
+                      : null;
+
+  useEffect(() => {
+    if (!tourOpen || !currentTourStepId) return;
+
+    const wantsToolsPanel = !readOnly && (currentTourStepId === 'measure' || currentTourStepId === 'annotate');
+    const wantsSlicerPanel = !readOnly && currentTourStepId === 'slice';
+    const wantsModelInfoPanel = currentTourStepId === 'model-info';
+    const wantsSharePanel = currentTourStepId === 'share';
+    const wantsCommentsPanel = currentTourStepId === 'comments';
+
+    setShowToolsPanel(wantsToolsPanel);
+    setShowSlicerPanel(wantsSlicerPanel);
+    setShowModelInfoPanel(wantsModelInfoPanel);
+
+    if (!readOnly && currentTourStepId === 'measure') {
+      setActiveTool('measure');
+    }
+
+    if (!readOnly && currentTourStepId === 'annotate') {
+      setActiveTool('annotate');
+    }
+
+    if (!readOnly && currentTourStepId === 'slice') {
+      setActiveTool('slice');
+    }
+
+    if (showShareToggle && onToggleSharePanel && sharePanelOpen !== wantsSharePanel) {
+      onToggleSharePanel();
+    }
+
+    if (showCommentsToggle && onToggleCommentsPanel && commentsPanelOpen !== wantsCommentsPanel) {
+      onToggleCommentsPanel();
+    }
+  }, [
+    commentsPanelOpen,
+    currentTourStepId,
+    onToggleCommentsPanel,
+    onToggleSharePanel,
+    readOnly,
+    sharePanelOpen,
+    showCommentsToggle,
+    showShareToggle,
+    tourOpen,
+  ]);
+
+  useEffect(() => {
+    if (!tourOpen || !currentTourTargetId) {
+      setTourTargetRect(null);
+      setTourCardRect(null);
+      return;
+    }
+
+    let frameId = 0;
+    let timeoutId = 0;
+
+    const updateTargetRect = () => {
+      const target = document.querySelector(`[data-tour-id="${currentTourTargetId}"]`);
+      if (!target) {
+        setTourTargetRect(null);
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+      setTourTargetRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        right: rect.right,
+        bottom: rect.bottom,
+      });
+
+      if (tourCardRef.current) {
+        const cardRect = tourCardRef.current.getBoundingClientRect();
+        setTourCardRect({
+          top: cardRect.top,
+          left: cardRect.left,
+          width: cardRect.width,
+          height: cardRect.height,
+          right: cardRect.right,
+          bottom: cardRect.bottom,
+        });
+      }
+    };
+
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(updateTargetRect);
+    };
+
+    timeoutId = window.setTimeout(scheduleMeasure, 160);
+    scheduleMeasure();
+
+    window.addEventListener('resize', scheduleMeasure);
+    window.addEventListener('scroll', scheduleMeasure, true);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('resize', scheduleMeasure);
+      window.removeEventListener('scroll', scheduleMeasure, true);
+    };
+  }, [
+    activeTool,
+    commentsPanelOpen,
+    currentTourTargetId,
+    sharePanelOpen,
+    showModelInfoPanel,
+    showSlicerPanel,
+    showToolsPanel,
+    tourOpen,
+  ]);
+
+  const goToNextTourStep = () => {
+    if (tourStepIndex >= tourSteps.length - 1) {
+      closeTour();
+      return;
+    }
+    setTourStepIndex((current) => Math.min(current + 1, tourSteps.length - 1));
+  };
+
+  const goToPreviousTourStep = () => {
+    setTourStepIndex((current) => Math.max(current - 1, 0));
+  };
+
+  const tourTooltipStyle = (() => {
+    if (!tourTargetRect || typeof window === 'undefined') {
+      return {
+        position: 'fixed',
+        right: isMobileViewport ? '12px' : '18px',
+        left: isMobileViewport ? '12px' : 'auto',
+        bottom: isMobileViewport ? '68px' : '72px',
+        width: isMobileViewport ? 'auto' : 'min(360px, calc(100vw - 36px))',
+      };
+    }
+
+    const padding = 12;
+    const topbarRect = document.querySelector('[data-tour-id="editor-topbar"]')?.getBoundingClientRect() ?? null;
+    const safeTop = Math.max(padding, (topbarRect?.bottom ?? 0) + 12);
+    const tooltipWidth = isMobileViewport ? Math.min(window.innerWidth - 24, 340) : 340;
+    const tooltipHeightEstimate = Math.max(260, tourCardRect?.height ?? 0);
+    const rightSpace = window.innerWidth - tourTargetRect.right - padding;
+    const leftSpace = tourTargetRect.left - padding;
+
+    if (!isMobileViewport && rightSpace >= tooltipWidth + 24) {
+      const top = Math.min(
+        Math.max(safeTop, tourTargetRect.top + tourTargetRect.height / 2 - tooltipHeightEstimate / 2),
+        window.innerHeight - tooltipHeightEstimate - padding
+      );
+      return {
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${tourTargetRect.right + 18}px`,
+        width: `${tooltipWidth}px`,
+        maxWidth: `calc(100vw - ${padding * 2}px)`,
+      };
+    }
+
+    if (!isMobileViewport && leftSpace >= tooltipWidth + 24) {
+      const top = Math.min(
+        Math.max(safeTop, tourTargetRect.top + tourTargetRect.height / 2 - tooltipHeightEstimate / 2),
+        window.innerHeight - tooltipHeightEstimate - padding
+      );
+      return {
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${Math.max(padding, tourTargetRect.left - tooltipWidth - 18)}px`,
+        width: `${tooltipWidth}px`,
+        maxWidth: `calc(100vw - ${padding * 2}px)`,
+      };
+    }
+
+    const preferredLeft = Math.min(
+      Math.max(padding, tourTargetRect.left),
+      Math.max(padding, window.innerWidth - tooltipWidth - padding)
+    );
+    const showBelow = tourTargetRect.bottom + 18 + tooltipHeightEstimate < window.innerHeight;
+    const top = showBelow
+      ? Math.min(window.innerHeight - tooltipHeightEstimate - padding, Math.max(safeTop, tourTargetRect.bottom + 16))
+      : Math.max(safeTop, tourTargetRect.top - tooltipHeightEstimate - 16);
+
+    return {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${preferredLeft}px`,
+      width: `${tooltipWidth}px`,
+      maxWidth: `calc(100vw - ${padding * 2}px)`,
+    };
+  })();
+
+  const tourConnector = (() => {
+    if (!tourTargetRect || !tourCardRect || typeof window === 'undefined') {
+      return null;
+    }
+
+    const targetX = tourTargetRect.left + tourTargetRect.width / 2;
+    const targetY = tourTargetRect.top + tourTargetRect.height / 2;
+    const cardCenterX = tourCardRect.left + tourCardRect.width / 2;
+    const cardCenterY = tourCardRect.top + tourCardRect.height / 2;
+
+    const startX = targetX < cardCenterX ? tourCardRect.left : tourCardRect.right;
+    const startY = Math.max(tourCardRect.top + 22, Math.min(targetY, tourCardRect.bottom - 22));
+
+    const deltaX = targetX - startX;
+    const midX = startX + deltaX * 0.55;
+    const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
+
+    return { path, targetX, targetY };
+  })();
+
   return (
     <div style={{ width: '100%', height: '100vh', backgroundColor: `#${theme.background.toString(16).padStart(6, '0')}`, position: 'relative', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} data-tour-id="canvas-viewport" style={{ width: '100%', height: '100%' }} />
       
       <input
         ref={fileInputRef}
@@ -2583,6 +2928,15 @@ const Medical3DCanvas = ({
         onGoHome={onGoHome}
         isCompact={isMobileViewport}
         showSceneSelector={false}
+        showTourToggle
+        tourOpen={tourOpen}
+        onToggleTour={toggleTour}
+        showShareToggle={showShareToggle}
+        sharePanelOpen={sharePanelOpen}
+        onToggleSharePanel={onToggleSharePanel}
+        showCommentsToggle={showCommentsToggle}
+        commentsPanelOpen={commentsPanelOpen}
+        onToggleCommentsPanel={onToggleCommentsPanel}
       />
 
       <SlicerPanel
@@ -2812,6 +3166,211 @@ const Medical3DCanvas = ({
           <img src={medvizLogo} alt="MedViz" style={{ width: '15px', height: '15px', objectFit: 'contain', opacity: 0.95 }} />
           <span>MedViz 3D Review</span>
         </div>
+      ) : null}
+
+      {tourOpen && currentTourStep ? (
+        <>
+          {tourConnector ? (
+            <svg
+              width={typeof window === 'undefined' ? 0 : window.innerWidth}
+              height={typeof window === 'undefined' ? 0 : window.innerHeight}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                pointerEvents: 'none',
+                zIndex: 359,
+                overflow: 'visible',
+              }}
+            >
+              <defs>
+                <marker id="tour-arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill={theme.accent} />
+                </marker>
+              </defs>
+              <path
+                d={tourConnector.path}
+                fill="none"
+                stroke={theme.accent}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="10 8"
+                markerEnd="url(#tour-arrowhead)"
+              />
+              <circle cx={tourConnector.targetX} cy={tourConnector.targetY} r="7" fill={theme.accent} fillOpacity="0.18" />
+              <circle cx={tourConnector.targetX} cy={tourConnector.targetY} r="4" fill={theme.accent} />
+            </svg>
+          ) : null}
+          {tourTargetRect ? (
+            <div
+              style={{
+                position: 'fixed',
+                top: `${Math.max(6, tourTargetRect.top - 6)}px`,
+                left: `${Math.max(6, tourTargetRect.left - 6)}px`,
+                width: `${tourTargetRect.width + 12}px`,
+                height: `${tourTargetRect.height + 12}px`,
+                borderRadius: '16px',
+                border: `2px solid ${theme.accent}`,
+                boxShadow: `0 0 0 9999px rgba(3, 10, 18, 0.32), 0 0 0 6px ${theme.accent}22`,
+                pointerEvents: 'none',
+                zIndex: 358,
+                transition: 'top 180ms ease, left 180ms ease, width 180ms ease, height 180ms ease',
+              }}
+            />
+          ) : null}
+          <div
+            ref={tourCardRef}
+            style={{
+              ...tourTooltipStyle,
+              padding: isMobileViewport ? '14px' : '16px',
+              borderRadius: '18px',
+              background:
+                activeTheme === 1
+                  ? 'linear-gradient(160deg, rgba(255,255,255,0.96), rgba(241,247,255,0.94))'
+                  : 'linear-gradient(160deg, rgba(7,18,31,0.96), rgba(13,32,53,0.94))',
+              border: `1px solid ${activeTheme === 1 ? 'rgba(0,0,0,0.08)' : 'rgba(118,214,255,0.2)'}`,
+              boxShadow: activeTheme === 1 ? '0 20px 48px rgba(21,28,37,0.16)' : '0 22px 56px rgba(1,8,15,0.52)',
+              backdropFilter: 'blur(14px)',
+              color: activeTheme === 1 ? '#172133' : '#e6f2ff',
+              zIndex: 360,
+            }}
+          >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: theme.accent,
+                }}
+              >
+                Guided Tour
+              </div>
+              <div style={{ marginTop: '6px', fontSize: isMobileViewport ? '19px' : '20px', fontWeight: 800, lineHeight: 1.25 }}>
+                {currentTourStep.title}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={closeTour}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: activeTheme === 1 ? '#5a6372' : '#9fb6cc',
+                fontSize: '18px',
+                lineHeight: 1,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+              aria-label="Close guided tour"
+              title="Close guided tour"
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ marginTop: '10px', fontSize: '13px', lineHeight: 1.6, color: activeTheme === 1 ? '#304055' : '#c3d6eb' }}>
+            {currentTourStep.body}
+          </div>
+
+          <div
+            style={{
+              marginTop: '12px',
+              padding: '10px 12px',
+              borderRadius: '12px',
+              background: activeTheme === 1 ? 'rgba(23,33,51,0.06)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${activeTheme === 1 ? 'rgba(23,33,51,0.08)' : 'rgba(255,255,255,0.08)'}`,
+              fontSize: '12px',
+              lineHeight: 1.5,
+              color: activeTheme === 1 ? '#43546c' : '#b4c9dd',
+            }}
+          >
+            {currentTourStep.detail}
+          </div>
+
+          <div style={{ marginTop: '8px', fontSize: '12px', color: activeTheme === 1 ? '#5a6372' : '#9fb6cc' }}>
+            {tourTargetRect ? 'Follow the highlighted control or panel.' : 'Waiting for the target control to appear.'}
+          </div>
+
+          <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {tourSteps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => setTourStepIndex(index)}
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  background:
+                    index === tourStepIndex
+                      ? theme.accent
+                      : activeTheme === 1
+                        ? 'rgba(23,33,51,0.14)'
+                        : 'rgba(255,255,255,0.18)',
+                }}
+                aria-label={`Go to tour step ${index + 1}`}
+                title={`Step ${index + 1}: ${step.title}`}
+              />
+            ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ fontSize: '12px', color: activeTheme === 1 ? '#5a6372' : '#9fb6cc' }}>
+              Step {tourStepIndex + 1} of {tourSteps.length}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={goToPreviousTourStep}
+                disabled={tourStepIndex === 0}
+                style={{
+                  padding: '8px 11px',
+                  borderRadius: '10px',
+                  border: `1px solid ${activeTheme === 1 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)'}`,
+                  background: activeTheme === 1 ? '#f2f5f8' : 'rgba(255,255,255,0.06)',
+                  color: activeTheme === 1 ? '#3d4d63' : '#d2e4f5',
+                  cursor: tourStepIndex === 0 ? 'not-allowed' : 'pointer',
+                  opacity: tourStepIndex === 0 ? 0.45 : 1,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={goToNextTourStep}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: theme.accent,
+                  color: '#04111d',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                }}
+              >
+                {tourStepIndex === tourSteps.length - 1 ? 'Finish Tour' : 'Next Step'}
+              </button>
+            </div>
+          </div>
+          </div>
+        </>
       ) : null}
 
       <StatusBar

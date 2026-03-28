@@ -192,6 +192,59 @@ function RevealCard({ className, children }) {
   );
 }
 
+function ProgressiveImage({
+  src,
+  alt,
+  className,
+  eager = false,
+  fetchPriority,
+  onClick,
+}) {
+  const frameRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(eager);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (shouldLoad) return;
+
+    const node = frameRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldLoad(true);
+        observer.disconnect();
+      },
+      { rootMargin: '280px 0px' }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shouldLoad]);
+
+  return (
+    <div
+      ref={frameRef}
+      className={`lp__progressive-image${isLoaded ? ' lp__progressive-image--loaded' : ''}${className ? ` ${className}` : ''}`}
+    >
+      <div className="lp__progressive-image__placeholder" aria-hidden="true" />
+      {shouldLoad ? (
+        <img
+          src={src}
+          alt={alt}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={fetchPriority}
+          onLoad={() => setIsLoaded(true)}
+          onClick={onClick}
+          style={onClick ? { cursor: 'pointer' } : undefined}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -234,6 +287,15 @@ export default function LandingPage({
 }) {
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const currentYear = new Date().getFullYear();
+  const headerActions = isAuthenticated
+    ? [
+        { label: 'Dashboard', onClick: onOpenDashboard, variant: 'outline' },
+        { label: 'Open Workspace', onClick: onEnterEditor, variant: 'primary' },
+      ]
+    : [
+        { label: 'Log in', onClick: onLogin, variant: 'outline' },
+        { label: 'Sign up', onClick: onSignup, variant: 'primary' },
+      ];
 
   useEffect(() => {
     const handler = (event) => {
@@ -274,10 +336,7 @@ export default function LandingPage({
           { label: 'See It', href: '#screenshots' },
           { label: 'Contact', href: '#feedback' },
         ]}
-        actions={[
-          { label: 'Try MedViz Free', onClick: openFreeDemo, variant: 'primary' },
-          { label: 'Email for Custom Setup', onClick: openPilotEmail, variant: 'outline' },
-        ]}
+        actions={headerActions}
       />
 
       <section className="lp__hero" id="hero">
@@ -347,11 +406,11 @@ export default function LandingPage({
               <div className="lp__dot lp__dot--g" />
               <div className="lp__url-bar">www.medviz3d.com / private review portal</div>
             </div>
-            <img
+            <ProgressiveImage
+              className="lp__hero-image"
               src={ss5}
               alt="MedViz editor showing a mandible review workflow"
-              loading="eager"
-              decoding="async"
+              eager
               fetchPriority="high"
             />
             <div className="lp__surface-card lp__surface-card--top">
@@ -526,14 +585,12 @@ export default function LandingPage({
           <div className="lp__gallery">
             {SCREENSHOTS.map((shot) => (
               <RevealCard key={shot.src} className="lp__gallery-item">
-                <img
+                <ProgressiveImage
                   src={shot.src}
                   alt={shot.alt}
-                  loading="lazy"
-                  decoding="async"
+                  className="lp__gallery-image"
                   fetchPriority="low"
                   onClick={() => setLightboxSrc(shot.src)}
-                  style={{ cursor: 'pointer' }}
                 />
               </RevealCard>
             ))}

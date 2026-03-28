@@ -95,6 +95,7 @@ const ToolsPanel = ({
   return (
     <div
       className="invisible-scrollbar"
+      data-tour-id="tools-panel"
       style={{
         ...getPanelStyle(activeTheme, '80px', 'left', { isMobile, isTablet }),
         background: palette.panelBg,
@@ -113,7 +114,12 @@ const ToolsPanel = ({
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
         {['measure', 'segment', 'slice', 'annotate', 'trim', 'transform'].map((tool) => (
-          <button key={tool} onClick={() => setActiveTool(tool)} style={getToolButtonStyle(activeTool === tool, palette)}>
+          <button
+            key={tool}
+            onClick={() => setActiveTool(tool)}
+            data-tour-id={tool === 'measure' ? 'measure-button' : tool === 'annotate' ? 'annotate-button' : tool === 'slice' ? 'slice-button' : undefined}
+            style={getToolButtonStyle(activeTool === tool, palette)}
+          >
             {TOOL_DISPLAY_NAMES[tool]}
           </button>
         ))}
@@ -159,6 +165,7 @@ const ToolsPanel = ({
           </button>
           <button
             onClick={() => setShowModelInfoPanel(!showModelInfoPanel)}
+            data-tour-id="model-info-button"
             style={getToolButtonStyle(showModelInfoPanel, palette)}
           >
             Model Info

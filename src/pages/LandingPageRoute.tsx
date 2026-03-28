@@ -6,7 +6,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 
 const LANDING_TITLE = 'Free Browser-Based 3D Case Review for Oral Surgery and Implant Teams | MedViz';
 const LANDING_DESCRIPTION =
-  'Try MedViz free with instant sample cases. Review, measure, annotate, share, and export reports in the browser. Optional guided pilots for custom setup.';
+  'Try MedViz free by importing your own de-identified model. Review, measure, annotate, share, and export reports in the browser. Optional guided pilots for custom setup.';
 const LANDING_URL = 'https://www.medviz3d.com/';
 const LANDING_IMAGE = 'https://www.medviz3d.com/medviz-social-share.png';
 

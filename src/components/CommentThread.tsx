@@ -21,9 +21,16 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 interface CommentThreadProps {
   caseId: string;
   isOwner: boolean;
+  variant?: 'page' | 'panel';
+  className?: string;
 }
 
-export default function CommentThread({ caseId, isOwner }: CommentThreadProps) {
+export default function CommentThread({
+  caseId,
+  isOwner,
+  variant = 'page',
+  className = '',
+}: CommentThreadProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,8 +165,19 @@ export default function CommentThread({ caseId, isOwner }: CommentThreadProps) {
       ? 'Several people are typing…'
       : null;
 
+  const isPanelVariant = variant === 'panel';
+  const sectionClass = isPanelVariant
+    ? `flex h-full flex-col rounded-[24px] border border-medviz-line/60 bg-[rgba(9,22,39,0.82)] px-4 py-4 shadow-[0_18px_36px_rgba(3,10,18,0.28)] ${className}`.trim()
+    : `mt-6 rounded-[34px] border border-medviz-line/80 bg-[rgba(15,39,69,0.88)] px-6 py-7 shadow-[0_24px_70px_rgba(3,10,18,0.4)] backdrop-blur lg:px-8 ${className}`.trim();
+  const commentsBodyClass = isPanelVariant
+    ? 'mt-5 flex-1 space-y-4 overflow-y-auto pr-1'
+    : 'mt-6 space-y-4';
+  const formWrapClass = isPanelVariant
+    ? 'mt-4 shrink-0 border-t border-medviz-line/60 pt-4'
+    : 'mt-6 border-t border-medviz-line/60 pt-6';
+
   return (
-    <section className="mt-6 rounded-[34px] border border-medviz-line/80 bg-[rgba(15,39,69,0.88)] px-6 py-7 shadow-[0_24px_70px_rgba(3,10,18,0.4)] backdrop-blur lg:px-8">
+    <section className={sectionClass}>
       <p className="font-display text-xs font-bold uppercase tracking-[0.4em] text-medviz-accent">
         Discussion
       </p>
@@ -167,7 +185,7 @@ export default function CommentThread({ caseId, isOwner }: CommentThreadProps) {
         Comments {totalCount > 0 ? `(${totalCount})` : ''}
       </h2>
 
-      <div className="mt-6 space-y-4">
+      <div className={commentsBodyClass}>
         {isLoading ? (
           Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-2xl border border-medviz-line bg-[rgba(9,22,39,0.85)]" />
@@ -203,7 +221,7 @@ export default function CommentThread({ caseId, isOwner }: CommentThreadProps) {
       )}
 
       {user && (
-        <div className="mt-6 border-t border-medviz-line/60 pt-6">
+        <div className={formWrapClass}>
           <CommentForm
             placeholder="Add a comment…"
             onSubmit={(content) => handleAdd(content, null)}

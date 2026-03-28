@@ -1,7 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
-import { FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
+import { FiAlertCircle, FiArrowLeft, FiCheck, FiCopy } from 'react-icons/fi';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { getSupabaseClient } from '../lib/supabase/client';
+import CommentThread from '../components/CommentThread';
 
 import { getCachedCaseModelFile, cacheCaseModelFile } from '../features/cases/modelCache';
 import {
@@ -63,6 +64,12 @@ const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
   initialEditorState?: EditorState | null;
   onEditorStateChange?: (state: EditorState) => void;
   externalEditorState?: EditorState | null;
+  showShareToggle?: boolean;
+  sharePanelOpen?: boolean;
+  onToggleSharePanel?: () => void;
+  showCommentsToggle?: boolean;
+  commentsPanelOpen?: boolean;
+  onToggleCommentsPanel?: () => void;
 }>;
 
 export default function EditorPage() {
@@ -79,6 +86,8 @@ export default function EditorPage() {
   const [saveState, setSaveState] = useState<EditorOverlayState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeModelLabel, setActiveModelLabel] = useState<string | null>(null);
+  const [activeDrawer, setActiveDrawer] = useState<'share' | 'comments' | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!caseId) {
@@ -472,6 +481,33 @@ export default function EditorPage() {
   const backToCasePath = caseRecord && !isLocalCaseId(caseRecord.id)
     ? `/cases/${caseRecord.id}`
     : '/dashboard';
+  const isCloudCase = Boolean(caseRecord && !isLocalCaseId(caseRecord.id));
+  const isCaseOwner = Boolean(caseRecord && user?.id && caseRecord.created_by === user.id);
+  const shareUrl = caseRecord?.share_token
+    ? `${window.location.origin}/share/${caseRecord.share_token}`
+    : null;
+  const isPublicCase = caseRecord?.visibility === 'public';
+
+  useEffect(() => {
+    if (!isCloudCase && activeDrawer) {
+      setActiveDrawer(null);
+    }
+  }, [activeDrawer, isCloudCase]);
+
+  const handleToggleShareDrawer = () => {
+    setActiveDrawer((current) => (current === 'share' ? null : 'share'));
+  };
+
+  const handleToggleCommentsDrawer = () => {
+    setActiveDrawer((current) => (current === 'comments' ? null : 'comments'));
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl).catch(() => undefined);
+    setShareLinkCopied(true);
+    window.setTimeout(() => setShareLinkCopied(false), 1800);
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -510,8 +546,99 @@ export default function EditorPage() {
           initialEditorState={caseRecord?.editor_state ?? null}
           onEditorStateChange={isViewOnly ? undefined : handleEditorStateChange}
           externalEditorState={externalEditorState}
+          showShareToggle={isCloudCase}
+          sharePanelOpen={activeDrawer === 'share'}
+          onToggleSharePanel={isCloudCase ? handleToggleShareDrawer : undefined}
+          showCommentsToggle={isCloudCase}
+          commentsPanelOpen={activeDrawer === 'comments'}
+          onToggleCommentsPanel={isCloudCase ? handleToggleCommentsDrawer : undefined}
         />
       </Suspense>
+
+      {isCloudCase && (
+        <div className="pointer-events-none absolute bottom-[52px] right-0 top-[114px] z-140 md:top-[72px]">
+          <aside
+            className={`pointer-events-auto h-full w-[min(430px,100vw)] border-l border-medviz-line/70 bg-[linear-gradient(180deg,rgba(6,15,26,0.94),rgba(7,18,33,0.9))] p-4 shadow-[-22px_0_70px_rgba(3,10,18,0.55)] backdrop-blur transition-all duration-300 ease-out ${
+              activeDrawer ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+            }`}
+            aria-hidden={!activeDrawer}
+          >
+            {activeDrawer === 'share' ? (
+              <section className="flex h-full flex-col rounded-[24px] border border-medviz-line/60 bg-[rgba(9,22,39,0.82)] p-5 text-white">
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-medviz-accent">
+                  Shareable Case Link
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-bold text-medviz-ink">
+                  {isPublicCase ? 'Copy secure review link' : 'Sharing is currently private'}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  {isPublicCase
+                    ? 'Share this link with teammates who should review this case.'
+                    : 'Make this case public from the case page to generate a shareable external link.'}
+                </p>
+
+                {isPublicCase && shareUrl ? (
+                  <div className="mt-5 rounded-2xl border border-medviz-line/60 bg-[rgba(7,17,31,0.86)] p-3">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/48">
+                      Public Link
+                    </label>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        value={shareUrl}
+                        readOnly
+                        className="flex-1 rounded-xl border border-medviz-line/60 bg-[rgba(3,10,18,0.85)] px-3 py-2 text-xs text-medviz-ink"
+                        aria-label="Shareable case link"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyShareLink()}
+                        className="inline-flex items-center gap-2 rounded-xl border border-medviz-line/60 bg-[rgba(9,22,39,0.92)] px-3 py-2 text-xs font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+                      >
+                        {shareLinkCopied ? (
+                          <>
+                            <FiCheck className="h-3.5 w-3.5 text-medviz-accent" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <FiCopy className="h-3.5 w-3.5" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    to={backToCasePath}
+                    className="mt-5 inline-flex w-fit items-center gap-2 rounded-full border border-medviz-line bg-[rgba(9,22,39,0.9)] px-4 py-2 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+                  >
+                    Open Case Page
+                    <FiArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                  </Link>
+                )}
+
+                {isCaseOwner ? (
+                  <p className="mt-auto pt-4 text-xs text-white/52">
+                    Tip: owners can control visibility from the case page.
+                  </p>
+                ) : null}
+              </section>
+            ) : activeDrawer === 'comments' ? (
+              <CommentThread
+                caseId={caseRecord!.id}
+                isOwner={isCaseOwner}
+                variant="panel"
+                className="h-full"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-[24px] border border-medviz-line/60 bg-[rgba(9,22,39,0.72)] p-5 text-center text-sm text-white/58">
+                Use the top bar buttons to open Share Link or Team Comments.
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
 
       {/* View-only banner for shared viewers */}
       {isViewOnly && (
