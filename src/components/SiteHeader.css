@@ -185,7 +185,7 @@
   margin: 2px 0;
 }
 
-@media (max-width: 1560px) {
+@media (max-width: 1360px) {
   .site-header__inner {
     max-width: none;
     gap: 20px;
@@ -236,7 +236,7 @@
   }
 }
 
-@media (max-width: 1420px) {
+@media (max-width: 1240px) {
   .site-header__nav {
     display: none;
   }
