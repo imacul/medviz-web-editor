@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "RideWave",
+    "slug": "ridewave",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ridewave.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RideWave needs your location to find nearby drivers and navigate your route.",
+        "NSLocationAlwaysUsageDescription": "RideWave uses your location for real-time trip tracking."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0F"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.ridewave.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow RideWave to use your location."
+        }
+      ]
+    ]
+  }
+}
