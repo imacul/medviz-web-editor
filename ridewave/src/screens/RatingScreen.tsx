@@ -43,7 +43,7 @@ const COMPLIMENTS = [
 
 export default function RatingScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { matchedDriver, currentTrip, tripHistory } = useStore();
+  const { matchedDriver, currentTrip, tripHistory, updateTripRating, resetRideFlow } = useStore();
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [selectedCompliments, setSelectedCompliments] = useState<string[]>([]);
@@ -69,7 +69,14 @@ export default function RatingScreen({ navigation }: Props) {
     );
     setSubmitted(true);
 
+    // Persist rating to the most recent trip in history
+    const latestTrip = tripHistory[0];
+    if (latestTrip) {
+      updateTripRating(latestTrip.id, rating);
+    }
+
     setTimeout(() => {
+      resetRideFlow();
       navigation.navigate('Main');
     }, 2500);
   };

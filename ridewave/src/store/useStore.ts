@@ -98,6 +98,7 @@ interface AppState {
   setCurrentTrip: (trip: Trip | null) => void;
   setMatchedDriver: (driver: Driver | null) => void;
   addTripToHistory: (trip: Trip) => void;
+  updateTripRating: (tripId: string, rating: number) => void;
   setIsLoading: (loading: boolean) => void;
   resetRideFlow: () => void;
 }
@@ -191,6 +192,12 @@ export const useStore = create<AppState>((set) => ({
   setMatchedDriver: (driver) => set({ matchedDriver: driver }),
   addTripToHistory: (trip) =>
     set((state) => ({ tripHistory: [trip, ...state.tripHistory] })),
+  updateTripRating: (tripId, rating) =>
+    set((state) => ({
+      tripHistory: state.tripHistory.map((t) =>
+        t.id === tripId ? { ...t, rating } : t,
+      ),
+    })),
   setIsLoading: (loading) => set({ isLoading: loading }),
   resetRideFlow: () =>
     set({

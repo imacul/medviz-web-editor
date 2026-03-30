@@ -103,11 +103,10 @@ export default function ActiveTripScreen({ navigation }: Props) {
         setEta(2);
       }, 12000),
       setTimeout(() => {
-        // Trip complete
+        // Trip complete — persist history but keep ride state so Rating can read driver/trip context
         if (currentTrip) {
           addTripToHistory({ ...currentTrip, status: 'completed', endTime: new Date() });
         }
-        resetRideFlow();
         navigation.replace('Rating');
       }, 16000),
     ];

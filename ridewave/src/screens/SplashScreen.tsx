@@ -34,10 +34,12 @@ export default function SplashScreen({ navigation }: Props) {
   const ringOpacity3 = useSharedValue(0);
   const screenOpacity = useSharedValue(1);
 
-  const { setAuthenticated, setUser, setHasCompletedOnboarding, hasCompletedOnboarding } = useStore();
+  const { setAuthenticated, setUser, setHasCompletedOnboarding, hasCompletedOnboarding, isAuthenticated } = useStore();
 
   const navigateNext = () => {
-    if (!hasCompletedOnboarding) {
+    if (isAuthenticated) {
+      navigation.replace('Main');
+    } else if (!hasCompletedOnboarding) {
       navigation.replace('Onboarding');
     } else {
       navigation.replace('Auth');
