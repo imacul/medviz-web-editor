@@ -236,7 +236,7 @@
   }
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1120px) {
   .site-header__nav {
     display: none;
   }
@@ -246,7 +246,7 @@
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 980px) {
   .site-header__actions {
     display: none;
   }
