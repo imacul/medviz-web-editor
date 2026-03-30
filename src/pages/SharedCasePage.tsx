@@ -174,11 +174,11 @@ export default function SharedCasePage() {
                   </p>
                   <h2 className="mt-3 font-display text-3xl font-bold">Open in 3D review</h2>
                   <p className="mt-3 text-sm leading-7 text-white/72">
-                    You have a MedViz account. Open this case in the 3D editor to measure anatomy,
-                    annotate findings, and review the model.
+                    You have a MedViz account. Open this case in the 3D editor to review the model,
+                    comment with the team, and continue the shared workflow.
                   </p>
                   <Link
-                    to={`/editor?caseId=${caseRecord.id}`}
+                    to={`/editor?shareToken=${encodeURIComponent(shareToken)}`}
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-medviz-accent px-5 py-3 text-sm font-semibold text-[#060f1a] transition hover:bg-[#7ad9ff]"
                   >
                     Open in 3D Review
@@ -190,21 +190,21 @@ export default function SharedCasePage() {
                   <p className="font-display text-xs font-bold uppercase tracking-[0.4em] text-medviz-gold">
                     Review this case
                   </p>
-                  <h2 className="mt-3 font-display text-3xl font-bold">Sign in to open</h2>
+                  <h2 className="mt-3 font-display text-3xl font-bold">Open the shared 3D viewer</h2>
                   <p className="mt-3 text-sm leading-7 text-white/72">
-                    Sign in to your MedViz account to open this case in 3D review, measure anatomy,
-                    and annotate findings.
+                    You can inspect the shared model without an account. Team features like comments
+                    and sharing the case onward will ask you to sign up.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <Link
-                      to="/login"
+                      to={`/editor?shareToken=${encodeURIComponent(shareToken)}`}
                       className="inline-flex items-center gap-2 rounded-full bg-medviz-accent px-5 py-3 text-sm font-semibold text-[#060f1a] transition hover:bg-[#7ad9ff]"
                     >
-                      Sign In
+                      Open 3D Viewer
                       <FiArrowRight className="h-4 w-4" />
                     </Link>
                     <Link
-                      to="/signup"
+                      to={`/signup?redirectTo=${encodeURIComponent(`/editor?shareToken=${shareToken}`)}`}
                       className="inline-flex items-center gap-2 rounded-full border border-medviz-line bg-transparent px-5 py-3 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
                     >
                       Create Account

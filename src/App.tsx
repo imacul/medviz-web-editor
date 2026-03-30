@@ -36,16 +36,16 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/share/:shareToken" element={<SharedCasePage />} />
+        <Route
+          path="/editor"
+          element={
+            <Suspense fallback={<EditorRouteFallback />}>
+              <EditorPage />
+            </Suspense>
+          }
+        />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route
-            path="/editor"
-            element={
-              <Suspense fallback={<EditorRouteFallback />}>
-                <EditorPage />
-              </Suspense>
-            }
-          />
           <Route path="/cases/new" element={<CreateCasePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/cases/:caseId/edit" element={<EditCasePage />} />

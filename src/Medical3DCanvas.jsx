@@ -2632,9 +2632,13 @@ const Medical3DCanvas = ({
 
   tourSteps.push({
     id: 'model-info',
-    title: 'Confirm orientation and unit assumptions',
-    body: 'Model Info lets you confirm import scale, units, and anatomical axes before you rely on measurements clinically.',
-    detail: 'Open Model Info and confirm +X / +Y / +Z orientation.',
+    title: readOnly ? 'Review orientation and unit assumptions' : 'Confirm orientation and unit assumptions',
+    body: readOnly
+      ? 'Model Info shows the detected import scale, units, and anatomical axes for this shared review. Signed-in editors can confirm them before using measurements clinically.'
+      : 'Model Info lets you confirm import scale, units, and anatomical axes before you rely on measurements clinically.',
+    detail: readOnly
+      ? 'Open Model Info and review the detected units plus the +X / +Y / +Z orientation reference.'
+      : 'Open Model Info and confirm +X / +Y / +Z orientation.',
   });
 
   if (showShareToggle) {
@@ -2827,6 +2831,44 @@ const Medical3DCanvas = ({
     const tooltipHeightEstimate = Math.max(260, tourCardRect?.height ?? 0);
     const rightSpace = window.innerWidth - tourTargetRect.right - padding;
     const leftSpace = tourTargetRect.left - padding;
+    const exportMenuClearance = 210;
+    const shouldDockBottomLeft =
+      !isMobileViewport &&
+      (currentTourStepId === 'measure' ||
+        currentTourStepId === 'annotate' ||
+        currentTourStepId === 'slice');
+
+    if (shouldDockBottomLeft) {
+      return {
+        position: 'fixed',
+        left: `${padding}px`,
+        bottom: '72px',
+        width: `${tooltipWidth}px`,
+        maxWidth: `calc(100vw - ${padding * 2}px)`,
+      };
+    }
+
+    if (!isMobileViewport && currentTourStepId === 'export') {
+      const left = Math.max(
+        padding,
+        Math.min(
+          tourTargetRect.left - tooltipWidth - exportMenuClearance,
+          window.innerWidth - tooltipWidth - padding
+        )
+      );
+      const top = Math.min(
+        window.innerHeight - tooltipHeightEstimate - padding,
+        Math.max(safeTop + 36, tourTargetRect.bottom + 28)
+      );
+
+      return {
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        width: `${tooltipWidth}px`,
+        maxWidth: `calc(100vw - ${padding * 2}px)`,
+      };
+    }
 
     if (!isMobileViewport && rightSpace >= tooltipWidth + 24) {
       const top = Math.min(

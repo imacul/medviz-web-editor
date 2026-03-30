@@ -12,8 +12,8 @@ export interface LocalCase {
   created_at: string;
 }
 
-export const isLocalCaseId = (caseId: string): boolean =>
-  caseId.startsWith(LOCAL_CASE_ID_PREFIX);
+export const isLocalCaseId = (caseId?: string | null): boolean =>
+  typeof caseId === 'string' && caseId.startsWith(LOCAL_CASE_ID_PREFIX);
 
 const readStoredCases = (): LocalCase[] => {
   try {
