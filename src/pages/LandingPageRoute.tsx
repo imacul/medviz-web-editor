@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 
 import LandingPage from '../LandingPage.jsx';
 import { useAuth } from '../features/auth/AuthProvider';
+import { appendSource, trackEvent } from '../lib/analytics';
 
 const LANDING_TITLE = 'Free Browser-Based 3D Case Review for Oral Surgery and Implant Teams | MedViz';
 const LANDING_DESCRIPTION =
@@ -77,10 +78,30 @@ export default function LandingPageRoute() {
 
   return (
     <LandingPage
-      onEnterEditor={() => navigate(user ? '/cases/new' : '/login?redirectTo=%2Fcases%2Fnew')}
-      onOpenDashboard={() => navigate(user ? '/dashboard' : '/login?redirectTo=%2Fdashboard')}
-      onLogin={() => navigate('/login')}
-      onSignup={() => navigate('/signup')}
+      onEnterEditor={(source: string = 'landing_workspace') => {
+        trackEvent('cta_click', { target: 'workspace', source });
+        navigate(
+          user
+            ? '/cases/new'
+            : `${appendSource('/login?redirectTo=%2Fcases%2Fnew', source)}`
+        );
+      }}
+      onOpenDashboard={(source: string = 'landing_dashboard') => {
+        trackEvent('cta_click', { target: 'dashboard', source });
+        navigate(
+          user
+            ? '/dashboard'
+            : `${appendSource('/login?redirectTo=%2Fdashboard', source)}`
+        );
+      }}
+      onLogin={(source: string = 'landing_login') => {
+        trackEvent('cta_click', { target: 'login', source });
+        navigate(appendSource('/login', source));
+      }}
+      onSignup={(source: string = 'landing_signup') => {
+        trackEvent('cta_click', { target: 'signup', source });
+        navigate(appendSource('/signup', source));
+      }}
       isAuthenticated={Boolean(user)}
     />
   );

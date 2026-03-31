@@ -20,6 +20,7 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 import { TbBone, TbBrandDatabricks, TbRuler, TbStethoscope } from 'react-icons/tb';
+import { appendSource, trackEvent } from './lib/analytics';
 
 import ss1 from '../screenshots/Screenshot 2026-02-07 183302 - optimized.jpg';
 import ss2 from '../screenshots/Screenshot 2026-02-07 183113 - optimized.jpg';
@@ -249,7 +250,8 @@ function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function openPilotEmail() {
+function openPilotEmail(source = 'landing_email') {
+  trackEvent('cta_click', { target: 'email', source });
   const subject = encodeURIComponent('MedViz Custom Setup Request');
   const body = encodeURIComponent(
     [
@@ -271,11 +273,13 @@ function openPilotEmail() {
 }
 
 function openPolicyPage() {
+  trackEvent('cta_click', { target: 'policy', source: 'landing_policy' });
   window.location.href = POLICY_PAGE_PATH;
 }
 
-function openFreeDemo() {
-  window.location.href = DEMO_PAGE_PATH;
+function openFreeDemo(source = 'landing_demo') {
+  trackEvent('cta_click', { target: 'demo', source });
+  window.location.href = appendSource(DEMO_PAGE_PATH, source);
 }
 
 export default function LandingPage({
@@ -289,12 +293,20 @@ export default function LandingPage({
   const currentYear = new Date().getFullYear();
   const headerActions = isAuthenticated
     ? [
-        { label: 'Dashboard', onClick: onOpenDashboard, variant: 'outline' },
-        { label: 'Open Workspace', onClick: onEnterEditor, variant: 'primary' },
+        {
+          label: 'Dashboard',
+          onClick: () => onOpenDashboard?.('landing_header_dashboard'),
+          variant: 'outline',
+        },
+        {
+          label: 'Open Workspace',
+          onClick: () => onEnterEditor?.('landing_header_workspace'),
+          variant: 'primary',
+        },
       ]
     : [
-        { label: 'Log in', onClick: onLogin, variant: 'outline' },
-        { label: 'Sign up', onClick: onSignup, variant: 'primary' },
+        { label: 'Log in', onClick: () => onLogin?.('landing_header_login'), variant: 'outline' },
+        { label: 'Sign up', onClick: () => onSignup?.('landing_header_signup'), variant: 'primary' },
       ];
 
   useEffect(() => {
@@ -314,7 +326,7 @@ export default function LandingPage({
       <SiteHeader
         onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         items={[
-          { label: 'Free Demo', href: '/demo' },
+          { label: 'Free Demo', href: appendSource('/demo', 'header_nav') },
           { label: 'Offer', href: '#offer' },
           { label: 'Pilot Flow', href: '#workflow' },
           { label: 'Pricing', href: '#pricing' },
@@ -345,7 +357,7 @@ export default function LandingPage({
             </p>
 
             <div className="lp__ctas">
-              <button className="lp__btn lp__btn--free lp__btn--lg" onClick={openFreeDemo}>
+              <button className="lp__btn lp__btn--free lp__btn--lg" onClick={() => openFreeDemo('hero_primary')}>
                 Try MedViz Free Now - No Signup, No Call Needed
                 <FiArrowRight size={16} />
               </button>
@@ -353,7 +365,7 @@ export default function LandingPage({
                 <FiPlay size={15} />
                 Watch 60-sec walkthrough
               </button>
-              <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={openPilotEmail}>
+              <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={() => openPilotEmail('hero_email')}>
                 Request custom setup by email
               </button>
             </div>
@@ -444,10 +456,10 @@ export default function LandingPage({
             </video>
           </div>
           <div className="lp__walkthrough-actions">
-            <button className="lp__btn lp__btn--free" onClick={openFreeDemo}>
+            <button className="lp__btn lp__btn--free" onClick={() => openFreeDemo('walkthrough_cta')}>
               Try MedViz Free Now - No Signup, No Call Needed
             </button>
-            <button className="lp__btn lp__btn--outline" onClick={openPilotEmail}>
+            <button className="lp__btn lp__btn--outline" onClick={() => openPilotEmail('walkthrough_email')}>
               Need custom setup? Send details by email
             </button>
           </div>
@@ -551,7 +563,10 @@ export default function LandingPage({
                     </li>
                   ))}
                 </ul>
-                <button className="lp__btn lp__btn--primary lp__btn--full" onClick={openPilotEmail}>
+                <button
+                  className="lp__btn lp__btn--primary lp__btn--full"
+                  onClick={() => openPilotEmail(`pricing_${pkg.title.toLowerCase().replace(/\s+/g, '_')}`)}
+                >
                   Request {pkg.title}
                 </button>
               </RevealCard>
@@ -617,10 +632,10 @@ export default function LandingPage({
             </p>
           </div>
           <div className="lp__cta-stack">
-            <button className="lp__cta-glow" onClick={openFreeDemo}>
+            <button className="lp__cta-glow" onClick={() => openFreeDemo('bottom_cta')}>
               Try MedViz Free Now
             </button>
-            <button className="lp__cta-plain" onClick={openPilotEmail}>
+            <button className="lp__cta-plain" onClick={() => openPilotEmail('bottom_email')}>
               Email Custom Setup Request
             </button>
           </div>
@@ -639,7 +654,7 @@ export default function LandingPage({
             </p>
 
             <div className="lp__contact-actions">
-              <button className="lp__btn lp__btn--primary" onClick={openPilotEmail}>
+              <button className="lp__btn lp__btn--primary" onClick={() => openPilotEmail('contact_email')}>
                 <FiMail size={16} />
                 Request Setup by Email
               </button>
@@ -696,7 +711,7 @@ export default function LandingPage({
         </div>
         <ul className="lp__footer-links">
           <li>
-            <button onClick={openFreeDemo}>Free Demo</button>
+            <button onClick={() => openFreeDemo('footer_demo')}>Free Demo</button>
           </li>
           <li>
             <button onClick={() => scrollToSection('offer')}>Offer</button>
@@ -705,7 +720,7 @@ export default function LandingPage({
             <button onClick={() => scrollToSection('pricing')}>Pricing</button>
           </li>
           <li>
-            <button onClick={openPilotEmail}>Contact</button>
+            <button onClick={() => openPilotEmail('footer_email')}>Contact</button>
           </li>
           <li>
             <button onClick={openPolicyPage}>Policy</button>

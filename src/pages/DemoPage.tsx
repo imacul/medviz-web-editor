@@ -1,8 +1,9 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from 'react';
 import { FiCopy, FiMessageCircle, FiX } from 'react-icons/fi';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { loadMedical3DCanvas } from './preload';
+import { trackEvent } from '../lib/analytics';
 import './DemoPage.css';
 
 type ModelSource =
@@ -50,6 +51,7 @@ const INTRO_CARD_FADE_MS = 420;
 export default function DemoPage() {
   type DemoPanelMode = 'share' | 'comments';
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [comments, setComments] = useState<DemoComment[]>(INITIAL_COMMENTS);
   const [author, setAuthor] = useState('Reviewer');
   const [commentText, setCommentText] = useState('');
@@ -66,6 +68,7 @@ export default function DemoPage() {
     if (typeof window === 'undefined') return 'https://www.medviz3d.com/demo';
     return `${window.location.origin}/demo`;
   }, []);
+  const source = searchParams.get('src') || 'direct';
 
   useEffect(() => {
     document.body.classList.add('editor-mode');
@@ -74,6 +77,10 @@ export default function DemoPage() {
       document.body.classList.remove('editor-mode');
     };
   }, []);
+
+  useEffect(() => {
+    trackEvent('demo_view', { source });
+  }, [source]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -128,12 +135,14 @@ export default function DemoPage() {
   };
 
   const handleStartTour = () => {
+    trackEvent('demo_action', { action: 'start_tour', source });
     setTourLaunchCount((current) => current + 1);
   };
 
   const copyShareUrl = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
+      trackEvent('demo_action', { action: 'copy_link', source });
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -151,6 +160,7 @@ export default function DemoPage() {
       text: trimmed,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
+    trackEvent('demo_action', { action: 'add_comment', source });
     setComments((prev) => [...prev, next]);
     setCommentText('');
   };

@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import SiteHeader from '../components/SiteHeader';
 import logoSvg from '../../assets/medviz-logo.svg';
 import { useAuth } from '../features/auth/AuthProvider';
+import { appendSource, trackEvent } from '../lib/analytics';
 import { getSupabaseClient } from '../lib/supabase/client';
 
 interface AuthPageProps {
@@ -45,12 +46,25 @@ export default function AuthPage({ mode }: AuthPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const redirectTo = useMemo(() => searchParams.get('redirectTo') || '/dashboard', [searchParams]);
+  const source = useMemo(() => searchParams.get('src') || 'direct', [searchParams]);
   const copy = COPY[mode];
+  const alternateHref = useMemo(
+    () => appendSource(`${copy.alternateHref}?redirectTo=${encodeURIComponent(redirectTo)}`, source),
+    [copy.alternateHref, redirectTo, source]
+  );
+  const forgotPasswordHref = useMemo(
+    () => appendSource(`/forgot-password?redirectTo=${encodeURIComponent(redirectTo)}`, source),
+    [redirectTo, source]
+  );
 
   useEffect(() => {
     document.body.classList.remove('editor-mode');
     document.title = mode === 'login' ? 'MedViz - Sign In' : 'MedViz - Sign Up';
   }, [mode]);
+
+  useEffect(() => {
+    trackEvent('auth_view', { mode, source });
+  }, [mode, source]);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -79,6 +93,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
     }
 
     setIsSubmitting(true);
+    trackEvent('auth_submit', { mode, source });
 
     try {
       const client = getSupabaseClient();
@@ -93,6 +108,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
           throw error;
         }
 
+        trackEvent('auth_success', { mode, source });
         navigate(redirectTo, { replace: true });
       } else {
         const { data, error } = await client.auth.signUp({
@@ -105,8 +121,10 @@ export default function AuthPage({ mode }: AuthPageProps) {
         }
 
         if (data.session) {
+          trackEvent('auth_success', { mode, source });
           navigate(redirectTo, { replace: true });
         } else {
+          trackEvent('auth_success', { mode: 'signup_pending', source });
           setSuccessMessage('Check your email, then return to begin reviewing cases.');
           setPassword('');
           setConfirmPassword('');
@@ -114,6 +132,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
       }
     } catch (error) {
       const authError = error as AuthError | Error;
+      trackEvent('auth_error', { mode, source });
       setErrorMessage(authError.message || 'Unable to continue.');
     } finally {
       setIsSubmitting(false);
@@ -125,8 +144,8 @@ export default function AuthPage({ mode }: AuthPageProps) {
       <SiteHeader
         actions={[
           mode === 'login'
-            ? { label: 'Create Access', to: `/signup?redirectTo=${encodeURIComponent(redirectTo)}`, variant: 'primary' }
-            : { label: 'Sign In', to: `/login?redirectTo=${encodeURIComponent(redirectTo)}`, variant: 'outline' },
+            ? { label: 'Create Access', to: appendSource(`/signup?redirectTo=${encodeURIComponent(redirectTo)}`, source), variant: 'primary' }
+            : { label: 'Sign In', to: appendSource(`/login?redirectTo=${encodeURIComponent(redirectTo)}`, source), variant: 'outline' },
         ]}
       />
 
@@ -180,7 +199,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
             {mode === 'login' ? (
               <div className="text-right text-sm">
                 <Link
-                  to={`/forgot-password?redirectTo=${encodeURIComponent(redirectTo)}`}
+                  to={forgotPasswordHref}
                 className="font-semibold text-medviz-accent transition hover:text-white"
               >
                 Forgot password?
@@ -242,7 +261,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
           <div className="mt-6 text-sm text-white/66">
             {copy.alternateText}{' '}
             <Link
-              to={`${copy.alternateHref}?redirectTo=${encodeURIComponent(redirectTo)}`}
+              to={alternateHref}
               className="font-semibold text-medviz-accent transition hover:text-white"
             >
               {copy.alternateCta}
