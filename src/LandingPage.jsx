@@ -32,7 +32,6 @@ import walkthroughVideo from '../assets/MedViz 3D.mp4';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'hello@medviz3d.com';
-const CONTACT_PHONE = '+2348145803309';
 const POLICY_PAGE_PATH = '/business-profile-refund-policy';
 const DEMO_PAGE_PATH = '/demo';
 
@@ -680,7 +679,6 @@ export default function LandingPage({
                   Open Policy Page
                 </button>
                 <a href={`mailto:${CONTACT_EMAIL}`}>Support: {CONTACT_EMAIL}</a>
-                <a href={`tel:${CONTACT_PHONE}`}>Phone: {CONTACT_PHONE}</a>
               </div>
             </div>
 

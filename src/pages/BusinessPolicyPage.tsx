@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
-import { FiCheckCircle, FiMail, FiPhone } from 'react-icons/fi';
+import { FiCheckCircle, FiMail } from 'react-icons/fi';
 
 import SiteHeader from '../components/SiteHeader';
 import './BusinessPolicyPage.css';
 
 const CONTACT_EMAIL = 'hello@medviz3d.com';
-const CONTACT_PHONE = '+2348145803309';
 const WEBSITE_URL = 'https://www.medviz3d.com';
 const FOUNDER_SOCIAL_URL = 'https://x.com/ImmaculRichie';
 const PMC_SOCIAL_URL = 'https://x.com/ProjMastery';
@@ -95,13 +94,6 @@ export default function BusinessPolicyPage() {
                   <span>
                     <strong>Support email:</strong>{' '}
                     <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-                  </span>
-                </li>
-                <li>
-                  <FiPhone size={16} />
-                  <span>
-                    <strong>Business phone:</strong>{' '}
-                    <a href={`tel:${CONTACT_PHONE}`}>{CONTACT_PHONE}</a>
                   </span>
                 </li>
                 <li>
