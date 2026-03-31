@@ -62,7 +62,18 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
 
       const availableWidth = inner.clientWidth;
       const brandWidth = brand.scrollWidth;
+
+      // Force nowrap before measuring so scrollWidth reflects the true intrinsic
+      // width of all nav items on a single line, regardless of the current layout
+      // mode. Without this, compact mode (which flex-wraps items) reports a
+      // smaller navWidth and falsely passes the desktop-fits check, causing the
+      // header to oscillate between desktop and compact on every ResizeObserver
+      // tick.
+      const prevFlexWrap = nav.style.flexWrap;
+      nav.style.flexWrap = 'nowrap';
       const navWidth = nav.scrollWidth;
+      nav.style.flexWrap = prevFlexWrap;
+
       const actionsWidth = actionsEl?.scrollWidth ?? 0;
 
       const desktopGapAllowance = actionsEl ? 72 : 40;
@@ -80,6 +91,10 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
 
     measureLayout();
 
+    // Only observe the outer container for width changes. Observing brand/nav/
+    // actions directly causes a feedback loop: a layout-mode switch resizes
+    // those elements, the ResizeObserver fires again, measureLayout() sees
+    // different scrollWidths and picks a different mode, which resizes again, etc.
     const resizeObserver =
       typeof ResizeObserver !== 'undefined'
         ? new ResizeObserver(() => {
@@ -87,19 +102,8 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
           })
         : null;
 
-    if (resizeObserver) {
-      if (innerRef.current) {
-        resizeObserver.observe(innerRef.current);
-      }
-      if (brandRef.current) {
-        resizeObserver.observe(brandRef.current);
-      }
-      if (navRef.current) {
-        resizeObserver.observe(navRef.current);
-      }
-      if (actionsRef.current) {
-        resizeObserver.observe(actionsRef.current);
-      }
+    if (resizeObserver && innerRef.current) {
+      resizeObserver.observe(innerRef.current);
     }
 
     window.addEventListener('resize', measureLayout);
