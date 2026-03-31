@@ -1,9 +1,9 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from 'react';
-import { FiCopy, FiMessageCircle, FiX } from 'react-icons/fi';
+import { FiArrowRight, FiCheckCircle, FiCopy, FiMessageCircle, FiX } from 'react-icons/fi';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { loadMedical3DCanvas } from './preload';
-import { trackEvent } from '../lib/analytics';
+import { appendSource, trackEvent } from '../lib/analytics';
 import './DemoPage.css';
 
 type ModelSource =
@@ -61,6 +61,7 @@ export default function DemoPage() {
   const [showIntroCard, setShowIntroCard] = useState(true);
   const [introCardClosing, setIntroCardClosing] = useState(false);
   const [tourLaunchCount, setTourLaunchCount] = useState(0);
+  const [promptReason, setPromptReason] = useState<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const commentsCardRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,9 +135,26 @@ export default function DemoPage() {
     setIntroCardClosing(true);
   };
 
+  const openCreateAccess = (reason = 'demo_cta') => {
+    trackEvent('cta_click', { target: 'signup', source, reason });
+    navigate(appendSource('/signup?redirectTo=%2Fdashboard', `${source}_${reason}`));
+  };
+
+  const openLogin = (reason = 'demo_login') => {
+    trackEvent('cta_click', { target: 'login', source, reason });
+    navigate(appendSource('/login?redirectTo=%2Fdashboard', `${source}_${reason}`));
+  };
+
+  const showConversionPrompt = (reason: string) => {
+    trackEvent('demo_prompt', { source, reason });
+    setPromptReason(reason);
+    setPanelOpen(true);
+  };
+
   const handleStartTour = () => {
     trackEvent('demo_action', { action: 'start_tour', source });
     setTourLaunchCount((current) => current + 1);
+    showConversionPrompt('after_tour');
   };
 
   const copyShareUrl = async () => {
@@ -144,6 +162,7 @@ export default function DemoPage() {
       await navigator.clipboard.writeText(shareUrl);
       trackEvent('demo_action', { action: 'copy_link', source });
       setCopied(true);
+      showConversionPrompt('after_copy_link');
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
       setCopied(false);
@@ -163,6 +182,7 @@ export default function DemoPage() {
     trackEvent('demo_action', { action: 'add_comment', source });
     setComments((prev) => [...prev, next]);
     setCommentText('');
+    showConversionPrompt('after_comment');
   };
 
   return (
@@ -206,6 +226,58 @@ export default function DemoPage() {
               Import your own de-identified STL, OBJ, or PLY model and start reviewing immediately. Rotate, zoom,
               measure, annotate, export PDF, and simulate team collaboration in one browser session.
             </p>
+          </div>
+        ) : null}
+
+        <div className="demo-panel__card demo-panel__convert">
+          <p className="demo-panel__eyebrow">Save the Outcome</p>
+          <h2>Create access when you want to keep the review moving</h2>
+          <p className="demo-panel__sub">
+            The free demo proves the workflow. Create access when you want to save your case, reopen it later,
+            and give your team a single place to review the same findings.
+          </p>
+          <div className="demo-panel__convert-points">
+            <div>
+              <FiCheckCircle size={14} />
+              <span>Save imported models and return without starting over</span>
+            </div>
+            <div>
+              <FiCheckCircle size={14} />
+              <span>Keep measurements, comments, and exports tied to the same case</span>
+            </div>
+            <div>
+              <FiCheckCircle size={14} />
+              <span>Move from one useful review to a repeatable team workflow</span>
+            </div>
+          </div>
+          <div className="demo-panel__convert-actions">
+            <button type="button" className="demo-panel__primary-cta" onClick={() => openCreateAccess('demo_panel_primary')}>
+              Create access to save this workflow
+              <FiArrowRight size={14} />
+            </button>
+            <button type="button" className="demo-panel__secondary-cta" onClick={() => openLogin('demo_panel_login')}>
+              Sign in to continue
+            </button>
+          </div>
+        </div>
+
+        {promptReason ? (
+          <div className="demo-panel__card demo-panel__prompt">
+            <p className="demo-panel__eyebrow">Keep This Review</p>
+            <h2>Save this progress and reopen it later</h2>
+            <p className="demo-panel__sub">
+              You already tested a key part of the workflow. Create access to keep your review, reuse the setup,
+              and share the next case without repeating the same steps.
+            </p>
+            <div className="demo-panel__convert-actions">
+              <button type="button" className="demo-panel__primary-cta" onClick={() => openCreateAccess(promptReason)}>
+                Create access now
+                <FiArrowRight size={14} />
+              </button>
+              <button type="button" className="demo-panel__secondary-cta" onClick={() => setPromptReason(null)}>
+                Keep exploring
+              </button>
+            </div>
           </div>
         ) : null}
 

@@ -110,6 +110,72 @@
   line-height: 1.5;
 }
 
+.demo-panel__convert {
+  border-color: rgba(126, 243, 204, 0.42);
+  background:
+    radial-gradient(circle at top right, rgba(113, 242, 191, 0.14), transparent 42%),
+    rgba(4, 17, 30, 0.92);
+}
+
+.demo-panel__convert-points {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.demo-panel__convert-points div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #d8ecff;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.demo-panel__convert-points svg {
+  color: #7ef3cc;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.demo-panel__convert-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.demo-panel__primary-cta,
+.demo-panel__secondary-cta {
+  border-radius: 11px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.demo-panel__primary-cta {
+  border: 1px solid rgba(100, 161, 218, 0.28);
+  background: linear-gradient(135deg, #71f2bf, #5fb8ff);
+  color: #031225;
+}
+
+.demo-panel__secondary-cta {
+  border: 1px solid rgba(100, 161, 218, 0.24);
+  background: rgba(7, 25, 43, 0.72);
+  color: #d8ecff;
+}
+
+.demo-panel__prompt {
+  border-color: rgba(118, 214, 255, 0.42);
+  background:
+    radial-gradient(circle at top left, rgba(95, 184, 255, 0.14), transparent 46%),
+    rgba(4, 17, 30, 0.92);
+}
+
 .demo-panel h2 {
   margin: 0 0 10px;
   font-size: 0.92rem;

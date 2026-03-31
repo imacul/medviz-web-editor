@@ -148,10 +148,10 @@ const PACKAGES = [
 ];
 
 const OUTCOMES = [
-  'Launch one validated 3D review workflow in 7 days',
-  'Shorten time from model upload to team review',
-  'Share findings without local software installs',
-  'Expand only after measurable pilot outcomes',
+  'Review a de-identified case in minutes instead of trading screenshots and calls',
+  'Capture findings with measurements, comments, and report-ready outputs in one browser flow',
+  'Share the same case view with your team without asking anyone to install local software',
+  'Create access only when you want to save work, reopen later, and coordinate across cases',
 ];
 
 const SCREENSHOTS = [
@@ -250,6 +250,11 @@ function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function openWalkthrough(source = 'landing_walkthrough') {
+  trackEvent('cta_click', { target: 'walkthrough', source });
+  scrollToSection('walkthrough');
+}
+
 function openPilotEmail(source = 'landing_email') {
   trackEvent('cta_click', { target: 'email', source });
   const subject = encodeURIComponent('MedViz Custom Setup Request');
@@ -346,27 +351,27 @@ export default function LandingPage({
             </div>
 
             <h1>
-              Free browser-based 3D case review
+              Move from model import to
               <br />
-              <span className="lp__highlight">for oral surgery and implant teams</span>
+              <span className="lp__highlight">clearer treatment decisions faster</span>
             </h1>
 
             <p className="lp__hero-sub">
-              Measure, annotate, collaborate via links, and generate reports. Try with sample cases instantly.
-              Paid guided pilots are available only if you want custom setup for your team.
+              Review a 3D case in the browser, mark the anatomy that matters, and leave the meeting with a
+              shareable record of the decision. Start free with sample cases or your own de-identified model.
             </p>
 
             <div className="lp__ctas">
               <button className="lp__btn lp__btn--free lp__btn--lg" onClick={() => openFreeDemo('hero_primary')}>
-                Try MedViz Free Now - No Signup, No Call Needed
+                Review a Case Free Now
                 <FiArrowRight size={16} />
               </button>
-              <button className="lp__btn lp__btn--outline lp__btn--lg" onClick={() => scrollToSection('walkthrough')}>
+              <button className="lp__btn lp__btn--outline lp__btn--lg" onClick={() => openWalkthrough('hero_walkthrough')}>
                 <FiPlay size={15} />
-                Watch 60-sec walkthrough
+                Watch the 60-sec workflow
               </button>
               <button className="lp__btn lp__btn--ghost lp__btn--lg" onClick={() => openPilotEmail('hero_email')}>
-                Request custom setup by email
+                Need rollout help? Email us
               </button>
             </div>
 
@@ -444,10 +449,10 @@ export default function LandingPage({
       <section id="walkthrough" className="lp__walkthrough-bg">
         <div className="lp__inner">
           <p className="lp__label">Workflow Video</p>
-          <h2 className="lp__title">See the full MedViz workflow in under 90 seconds</h2>
+          <h2 className="lp__title">See how teams review, comment, and leave with a documented decision</h2>
           <p className="lp__sub">
-            This walkthrough shows instant demo loading, measurement, annotation, share-link flow, team comment simulation,
-            and report export.
+            This walkthrough shows the full outcome: open a case, measure what matters, add comments, share the
+            same view, and export what the team decided.
           </p>
           <div className="lp__walkthrough-wrap">
             <video controls preload="metadata" playsInline poster={ss6}>
@@ -457,7 +462,7 @@ export default function LandingPage({
           </div>
           <div className="lp__walkthrough-actions">
             <button className="lp__btn lp__btn--free" onClick={() => openFreeDemo('walkthrough_cta')}>
-              Try MedViz Free Now - No Signup, No Call Needed
+              Review a Case Free Now
             </button>
             <button className="lp__btn lp__btn--outline" onClick={() => openPilotEmail('walkthrough_email')}>
               Need custom setup? Send details by email
@@ -625,18 +630,18 @@ export default function LandingPage({
       <section className="lp__cta-band">
         <div className="lp__cta-inner">
           <div>
-            <h2>Start testing in minutes, not weeks</h2>
+            <h2>Turn one case review into a clearer team decision</h2>
             <p>
-              Open free demo mode now with sample cases. If your team wants custom implementation, email your
-              workflow and get an async setup plan.
+              Open the demo, review a case, and see the outcome for yourself. When you want to save work,
+              reopen later, or roll this out across the team, create access or email for setup help.
             </p>
           </div>
           <div className="lp__cta-stack">
             <button className="lp__cta-glow" onClick={() => openFreeDemo('bottom_cta')}>
-              Try MedViz Free Now
+              Review a Case Free Now
             </button>
             <button className="lp__cta-plain" onClick={() => openPilotEmail('bottom_email')}>
-              Email Custom Setup Request
+              Email for custom rollout
             </button>
           </div>
         </div>
