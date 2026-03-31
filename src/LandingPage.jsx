@@ -306,21 +306,6 @@ export default function LandingPage({
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  useEffect(() => {
-    if (!TALLY_FORM_ID) return;
-    if (document.getElementById('tally-embed-js')) return;
-
-    const script = document.createElement('script');
-    script.id = 'tally-embed-js';
-    script.src = 'https://tally.so/widgets/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.getElementById('tally-embed-js')?.remove();
-    };
-  }, []);
-
   return (
     <div className="lp">
       <div className="lp__grid-bg" />
@@ -682,9 +667,10 @@ export default function LandingPage({
             <div className="lp__tally">
               {TALLY_FORM_ID ? (
                 <iframe
-                  src={`https://tally.so/embed/${TALLY_FORM_ID}?hideTitle=1&transparentBackground=1&dynamicHeight=1`}
+                  src={`https://tally.so/embed/${TALLY_FORM_ID}?hideTitle=1&transparentBackground=1`}
                   loading="lazy"
                   width="100%"
+                  height="680"
                   frameBorder="0"
                   title="MedViz contact form"
                 />
