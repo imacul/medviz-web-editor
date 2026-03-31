@@ -51,24 +51,31 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
 
   useEffect(() => {
     const measureLayout = () => {
-      const inner = innerRef.current;
       const brand = brandRef.current;
       const nav = navRef.current;
       const actionsEl = actionsRef.current;
 
-      if (!inner || !brand || !nav) {
+      if (!brand || !nav) {
         return;
       }
 
-      const availableWidth = inner.clientWidth;
+      // Use window.innerWidth as the stable baseline. inner.clientWidth varies
+      // between layout modes because desktop uses clamp(24px,5vw,72px) padding
+      // while compact uses clamp(20px,3vw,40px), so using inner.clientWidth
+      // causes a feedback loop: switching modes changes the measured available
+      // width, which flips the decision back, which switches modes again, etc.
+      const vw = window.innerWidth;
+      const desktopPad = Math.min(72, Math.max(24, vw * 0.05)) * 2;
+      const compactPad = Math.min(40, Math.max(20, vw * 0.03)) * 2;
+      const desktopAvail = vw - desktopPad;
+      const compactAvail = vw - compactPad;
+
       const brandWidth = brand.scrollWidth;
 
-      // Force nowrap before measuring so scrollWidth reflects the true intrinsic
-      // width of all nav items on a single line, regardless of the current layout
-      // mode. Without this, compact mode (which flex-wraps items) reports a
-      // smaller navWidth and falsely passes the desktop-fits check, causing the
-      // header to oscillate between desktop and compact on every ResizeObserver
-      // tick.
+      // Force nowrap so scrollWidth reflects the intrinsic single-row width of
+      // all nav items regardless of the current layout mode. In compact mode the
+      // nav flex-wraps, which makes scrollWidth report the wrapped (smaller)
+      // width and falsely pass the desktop-fits check.
       const prevFlexWrap = nav.style.flexWrap;
       nav.style.flexWrap = 'nowrap';
       const navWidth = nav.scrollWidth;
@@ -80,10 +87,10 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
       const compactTopRowAllowance = actionsEl ? 24 : 0;
 
       const desktopFits =
-        brandWidth + navWidth + actionsWidth + desktopGapAllowance <= availableWidth;
+        brandWidth + navWidth + actionsWidth + desktopGapAllowance <= desktopAvail;
       const compactFits =
-        brandWidth + actionsWidth + compactTopRowAllowance <= availableWidth &&
-        navWidth <= availableWidth;
+        brandWidth + actionsWidth + compactTopRowAllowance <= compactAvail &&
+        navWidth <= compactAvail;
 
       const nextMode = desktopFits ? 'desktop' : compactFits ? 'compact' : 'mobile';
       setLayoutMode((current) => (current === nextMode ? current : nextMode));
