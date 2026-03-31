@@ -118,12 +118,16 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
 
       const desktopGapAllowance = actionsEl ? 72 : 40;
       const compactTopRowAllowance = actionsEl ? 24 : 0;
+      const desktopComfortAllowance = actionsEl ? 56 : 32;
+      const compactComfortAllowance = actionsEl ? 28 : 20;
 
       const desktopFits =
-        brandWidth + navWidth + actionsWidth + desktopGapAllowance <= desktopAvail;
+        brandWidth + navWidth + actionsWidth + desktopGapAllowance + desktopComfortAllowance <=
+        desktopAvail;
       const compactFits =
-        brandWidth + actionsWidth + compactTopRowAllowance <= compactAvail &&
-        navWidth <= compactAvail;
+        brandWidth + actionsWidth + compactTopRowAllowance + compactComfortAllowance <=
+          compactAvail &&
+        navWidth + compactComfortAllowance <= compactAvail;
 
       const nextMode = desktopFits ? 'desktop' : compactFits ? 'compact' : 'mobile';
       setLayoutMode((current) => (current === nextMode ? current : nextMode));
