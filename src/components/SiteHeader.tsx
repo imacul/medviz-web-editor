@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 import { Link, useLocation } from 'react-router';
 
@@ -17,6 +17,36 @@ interface SiteHeaderProps {
   items?: HeaderItem[];
   actions?: HeaderItem[];
   onBrandClick?: () => void;
+}
+
+function measureIntrinsicWidth(
+  element: HTMLElement,
+  configureClone?: (clone: HTMLElement) => void
+) {
+  const clone = element.cloneNode(true) as HTMLElement;
+
+  clone.style.position = 'fixed';
+  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.visibility = 'hidden';
+  clone.style.pointerEvents = 'none';
+  clone.style.width = 'max-content';
+  clone.style.maxWidth = 'none';
+  clone.style.minWidth = '0';
+  clone.style.margin = '0';
+  clone.style.transform = 'none';
+  clone.style.gridArea = 'auto';
+  clone.style.justifySelf = 'start';
+  clone.style.alignSelf = 'start';
+  clone.style.flex = 'none';
+
+  configureClone?.(clone);
+
+  document.body.appendChild(clone);
+  const width = clone.getBoundingClientRect().width;
+  clone.remove();
+
+  return width;
 }
 
 export default function SiteHeader({ items = [], actions = [], onBrandClick }: SiteHeaderProps) {
@@ -49,7 +79,7 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
     setIsMenuOpen(false);
   }, [location.pathname, location.search, location.hash]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const measureLayout = () => {
       const brand = brandRef.current;
       const nav = navRef.current;
@@ -70,18 +100,21 @@ export default function SiteHeader({ items = [], actions = [], onBrandClick }: S
       const desktopAvail = vw - desktopPad;
       const compactAvail = vw - compactPad;
 
-      const brandWidth = brand.scrollWidth;
-
-      // Force nowrap so scrollWidth reflects the intrinsic single-row width of
-      // all nav items regardless of the current layout mode. In compact mode the
-      // nav flex-wraps, which makes scrollWidth report the wrapped (smaller)
-      // width and falsely pass the desktop-fits check.
-      const prevFlexWrap = nav.style.flexWrap;
-      nav.style.flexWrap = 'nowrap';
-      const navWidth = nav.scrollWidth;
-      nav.style.flexWrap = prevFlexWrap;
-
-      const actionsWidth = actionsEl?.scrollWidth ?? 0;
+      // Measure clones off-screen so the result does not depend on the current
+      // grid mode. Reading scrollWidth directly from live elements becomes
+      // unstable once mobile/compact styles stretch or hide those elements.
+      const brandWidth = measureIntrinsicWidth(brand, (clone) => {
+        clone.style.display = 'inline-flex';
+      });
+      const navWidth = measureIntrinsicWidth(nav, (clone) => {
+        clone.style.display = 'flex';
+        clone.style.flexWrap = 'nowrap';
+      });
+      const actionsWidth = actionsEl
+        ? measureIntrinsicWidth(actionsEl, (clone) => {
+            clone.style.display = 'flex';
+          })
+        : 0;
 
       const desktopGapAllowance = actionsEl ? 72 : 40;
       const compactTopRowAllowance = actionsEl ? 24 : 0;
