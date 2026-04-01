@@ -68,7 +68,12 @@ export default function BlogIndexPage() {
         <section className="blog-page__grid">
           <div className="blog-page__post-grid">
             {blogPosts.map((post) => (
-              <Link key={post.slug} to={`/blog/${post.slug}`} className="blog-page__card blog-page__post-card">
+              <Link
+                key={post.slug}
+                to={`/blog/${post.slug}`}
+                className="blog-page__card blog-page__post-card"
+                onClick={() => trackEvent('blog_post_open', { slug: post.slug, source: 'blog_index_card' })}
+              >
                 <div className="blog-page__meta">
                   <span className="blog-page__chip">{post.category}</span>
                   <span>{post.readTime}</span>

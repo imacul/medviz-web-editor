@@ -28,7 +28,7 @@ import ss3 from '../screenshots/Screenshot 2026-02-07 183405 - optimized.jpg';
 import ss4 from '../screenshots/Screenshot 2026-02-07 104323 - optimized.jpg';
 import ss5 from '../screenshots/Screenshot 2026-03-19 191802 - optimized.jpg';
 import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
-import walkthroughVideo from '../assets/MedViz 3D.mp4';
+import walkthroughVideo from '../assets/medviz3D.mp4';
 
 const TALLY_FORM_ID = 'LZdLDz';
 const CONTACT_EMAIL = 'hello@medviz3d.com';
@@ -331,6 +331,7 @@ export default function LandingPage({
         onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         items={[
           { label: 'Free Demo', href: appendSource('/demo', 'header_nav') },
+          { label: 'Blog', href: appendSource('/blog', 'landing_header_blog') },
           { label: 'Offer', href: '#offer' },
           { label: 'Pilot Flow', href: '#workflow' },
           { label: 'Pricing', href: '#pricing' },
@@ -715,6 +716,9 @@ export default function LandingPage({
         <ul className="lp__footer-links">
           <li>
             <button onClick={() => openFreeDemo('footer_demo')}>Free Demo</button>
+          </li>
+          <li>
+            <button onClick={() => (window.location.href = appendSource('/blog', 'landing_footer_blog'))}>Blog</button>
           </li>
           <li>
             <button onClick={() => scrollToSection('offer')}>Offer</button>

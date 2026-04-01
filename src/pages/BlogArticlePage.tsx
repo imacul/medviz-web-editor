@@ -145,7 +145,7 @@ function BlogArticlePageView({ slug }: { slug: string }) {
 
           <aside className="blog-page__sidebar">
             <div className="blog-page__sidebar-card">
-              <h3>See the workflow in action</h3>
+              <h3>See how your team could review faster</h3>
               <p>
                 If this article matches the bottleneck your team is trying to solve, open the demo and explore the
                 review flow while the use case is still fresh.
@@ -175,7 +175,17 @@ function BlogArticlePageView({ slug }: { slug: string }) {
               <ul>
                 {relatedPosts.map((relatedPost) => (
                   <li key={relatedPost.slug}>
-                    <Link to={`/blog/${relatedPost.slug}`}>{relatedPost.title}</Link>
+                    <Link
+                      to={`/blog/${relatedPost.slug}`}
+                      onClick={() =>
+                        trackEvent('blog_post_open', {
+                          slug: relatedPost.slug,
+                          source: `blog_article_related_${post.slug}`,
+                        })
+                      }
+                    >
+                      {relatedPost.title}
+                    </Link>
                   </li>
                 ))}
               </ul>
