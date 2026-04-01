@@ -1,58 +1,32 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
-import LandingPage from '../LandingPage.jsx';
 import { useAuth } from '../features/auth/AuthProvider';
 import { appendSource, trackEvent } from '../lib/analytics';
+import { usePageSeo } from '../lib/seo';
+import LandingPage from '../LandingPage.jsx';
 
 const LANDING_TITLE = 'Free Browser-Based 3D Case Review for Oral Surgery and Implant Teams | MedViz';
 const LANDING_DESCRIPTION =
   'Try MedViz free by importing your own de-identified model. Review, measure, annotate, share, and export reports in the browser. Optional guided pilots for custom setup.';
-const LANDING_URL = 'https://www.medviz3d.com/';
-const LANDING_IMAGE = 'https://www.medviz3d.com/medviz-social-share.png';
-
-function upsertMeta(attribute: 'name' | 'property', value: string, content: string) {
-  let meta = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement | null;
-  if (!meta) {
-    meta = document.createElement('meta');
-    meta.setAttribute(attribute, value);
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute('content', content);
-}
-
-function upsertCanonical(href: string) {
-  let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!link) {
-    link = document.createElement('link');
-    link.setAttribute('rel', 'canonical');
-    document.head.appendChild(link);
-  }
-  link.setAttribute('href', href);
-}
-
 export default function LandingPageRoute() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    document.body.classList.remove('editor-mode');
-    document.title = LANDING_TITLE;
-    upsertMeta('name', 'description', LANDING_DESCRIPTION);
-    upsertMeta('property', 'og:title', LANDING_TITLE);
-    upsertMeta('property', 'og:description', LANDING_DESCRIPTION);
-    upsertMeta('property', 'og:url', LANDING_URL);
-    upsertMeta('property', 'og:image', LANDING_IMAGE);
-    upsertMeta('property', 'og:image:secure_url', LANDING_IMAGE);
-    upsertMeta('property', 'og:image:width', '1200');
-    upsertMeta('property', 'og:image:height', '630');
-    upsertMeta('property', 'og:image:alt', 'MedViz 3D case review software for oral surgery and implant teams');
-    upsertMeta('name', 'twitter:title', LANDING_TITLE);
-    upsertMeta('name', 'twitter:description', LANDING_DESCRIPTION);
-    upsertMeta('name', 'twitter:image', LANDING_IMAGE);
-    upsertCanonical(LANDING_URL);
-  }, []);
+  usePageSeo({
+    title: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
+    path: '/',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'MedViz 3D',
+      url: 'https://www.medviz3d.com/',
+      description:
+        'Free browser-based 3D case review where teams can import de-identified models, measure, annotate, collaborate, and export reports.',
+    },
+  });
 
   useEffect(() => {
     if (!location.hash) {

@@ -14,6 +14,8 @@ const CasePage = lazy(() => import('./pages/CasePage'));
 const LandingPageRoute = lazy(() => import('./pages/LandingPageRoute'));
 const BusinessPolicyPage = lazy(() => import('./pages/BusinessPolicyPage'));
 const DemoPage = lazy(() => import('./pages/DemoPage'));
+const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage'));
+const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -30,6 +32,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPageRoute />} />
         <Route path="/demo" element={<DemoPage />} />
+        <Route path="/blog" element={<BlogIndexPage />} />
+        <Route path="/blog/:slug" element={<BlogArticlePage />} />
         <Route path="/business-profile-refund-policy" element={<BusinessPolicyPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
