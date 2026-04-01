@@ -15,6 +15,7 @@ export default function BlogIndexPage() {
     title: BLOG_TITLE,
     description: BLOG_DESCRIPTION,
     path: '/blog',
+    keywords: blogPosts.flatMap((post) => post.keywords),
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Blog',
@@ -26,6 +27,14 @@ export default function BlogIndexPage() {
         name: 'MedViz 3D',
         url: SITE_URL,
       },
+      blogPost: blogPosts.map((post) => ({
+        '@type': 'BlogPosting',
+        headline: post.title,
+        url: `${SITE_URL}/blog/${post.slug}`,
+        datePublished: post.publishedAt,
+        dateModified: post.updatedAt,
+        description: post.description,
+      })),
     },
   });
 

@@ -11,8 +11,12 @@ export interface SeoConfig {
   description: string;
   path: string;
   image?: string;
+  imageAlt?: string;
+  keywords?: string[];
   type?: 'website' | 'article';
   robots?: string;
+  publishedTime?: string;
+  modifiedTime?: string;
   jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
@@ -62,8 +66,12 @@ export function usePageSeo({
   description,
   path,
   image = DEFAULT_OG_IMAGE,
+  imageAlt = 'MedViz 3D case review software for oral surgery and implant teams',
+  keywords,
   type = 'website',
   robots = 'index, follow, max-image-preview:large',
+  publishedTime,
+  modifiedTime,
   jsonLd,
 }: SeoConfig) {
   useEffect(() => {
@@ -83,11 +91,21 @@ export function usePageSeo({
     upsertMeta('property', 'og:image:secure_url', image);
     upsertMeta('property', 'og:image:width', '1200');
     upsertMeta('property', 'og:image:height', '630');
+    upsertMeta('property', 'og:image:alt', imageAlt);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
     upsertMeta('name', 'twitter:image', image);
+    if (keywords?.length) {
+      upsertMeta('name', 'keywords', keywords.join(', '));
+    }
+    if (publishedTime) {
+      upsertMeta('property', 'article:published_time', publishedTime);
+    }
+    if (modifiedTime) {
+      upsertMeta('property', 'article:modified_time', modifiedTime);
+    }
     upsertCanonical(canonicalUrl);
     upsertJsonLd(jsonLd);
-  }, [description, image, jsonLd, path, robots, title, type]);
+  }, [description, image, imageAlt, jsonLd, keywords, modifiedTime, path, publishedTime, robots, title, type]);
 }

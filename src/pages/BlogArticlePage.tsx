@@ -31,11 +31,14 @@ function BlogArticlePageView({ slug }: { slug: string }) {
     title: `${post.title} | MedViz Blog`,
     description: post.description,
     path: `/blog/${post.slug}`,
+    keywords: post.keywords,
     type: 'article',
+    publishedTime: post.publishedAt,
+    modifiedTime: post.updatedAt,
     jsonLd: [
       {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: post.title,
         description: post.description,
         image: post.heroImage,
@@ -52,6 +55,11 @@ function BlogArticlePageView({ slug }: { slug: string }) {
         dateModified: post.updatedAt,
         mainEntityOfPage: articleUrl,
         keywords: post.keywords.join(', '),
+        articleSection: post.category,
+        about: post.keywords.map((keyword) => ({
+          '@type': 'Thing',
+          name: keyword,
+        })),
       },
       {
         '@context': 'https://schema.org',
