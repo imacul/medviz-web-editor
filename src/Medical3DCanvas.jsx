@@ -82,6 +82,8 @@ const DEFAULT_SPATIAL_ORIENTATION = {
   status: 'unconfirmed'
 };
 
+const EDITOR_STATE_EMIT_DEBOUNCE_MS = 250;
+
 const scaleBounds = (bounds, factor) => ({
   x: Number((Number(bounds?.x ?? 0) * factor).toFixed(2)),
   y: Number((Number(bounds?.y ?? 0) * factor).toFixed(2)),
@@ -104,6 +106,7 @@ const Medical3DCanvas = ({
   showCommentsToggle = false,
   commentsPanelOpen = false,
   onToggleCommentsPanel = null,
+  editorSaveStatus = null,
 }) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
@@ -152,6 +155,7 @@ const Medical3DCanvas = ({
   const initialEditorStateRef = useRef(initialEditorState);
   const cameraStateRef = useRef(null);
   const editorStateEmitTimerRef = useRef(null);
+  const suppressEditorStateEmitRef = useRef(0);
   const [paintVersion, setPaintVersion] = useState(0);
   const markerCounterRef = useRef(1);
   const idCounterRef = useRef(1);
@@ -194,6 +198,33 @@ const Medical3DCanvas = ({
   const [tourTargetRect, setTourTargetRect] = useState(null);
   const [tourCardRect, setTourCardRect] = useState(null);
   const tourCardRef = useRef(null);
+
+  const runWithoutEditorStateEmit = (callback) => {
+    suppressEditorStateEmitRef.current += 1;
+    if (editorStateEmitTimerRef.current) {
+      clearTimeout(editorStateEmitTimerRef.current);
+      editorStateEmitTimerRef.current = null;
+    }
+    try {
+      callback();
+    } finally {
+      window.setTimeout(() => {
+        suppressEditorStateEmitRef.current = Math.max(0, suppressEditorStateEmitRef.current - 1);
+      }, 0);
+    }
+  };
+
+  const beginEditorStateEmitSuppression = () => {
+    suppressEditorStateEmitRef.current += 1;
+    if (editorStateEmitTimerRef.current) {
+      clearTimeout(editorStateEmitTimerRef.current);
+      editorStateEmitTimerRef.current = null;
+    }
+
+    return () => {
+      suppressEditorStateEmitRef.current = Math.max(0, suppressEditorStateEmitRef.current - 1);
+    };
+  };
 
   const hasLoadedModel = Boolean(importedModel || initialModelSource || persistentModelRef.current);
 
@@ -893,6 +924,33 @@ const Medical3DCanvas = ({
     return intersections.find((hit) => !hit.object?.userData?.isSegmentOffsetPreview) ?? null;
   };
 
+  const getMarkerHitFromPointer = (event) => {
+    if (!rendererRef.current || !cameraRef.current) return null;
+
+    const dom = rendererRef.current.domElement;
+    const rect = dom.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycasterRef.current.setFromCamera({ x, y }, cameraRef.current);
+
+    const markerObjects = [];
+    for (const [markerId, marker] of markerObjectMapRef.current.entries()) {
+      if (marker.sphere?.visible) {
+        marker.sphere.userData.markerId = markerId;
+        markerObjects.push(marker.sphere);
+      }
+      if (marker.sprite?.visible) {
+        marker.sprite.userData.markerId = markerId;
+        markerObjects.push(marker.sprite);
+      }
+    }
+
+    if (markerObjects.length === 0) return null;
+
+    const hits = raycasterRef.current.intersectObjects(markerObjects, false);
+    return hits[0]?.object?.userData?.markerId ?? null;
+  };
+
   const paintSegmentationStroke = (mesh, fromPoint, toPoint) => {
     const colorAttr = ensureSegmentColorAttribute(mesh);
     const geometry = mesh.geometry;
@@ -1375,10 +1433,67 @@ const Medical3DCanvas = ({
       fontSize: 28,
       padding: 12,
       border: '#00d3ff',
-      background: 'rgba(8,16,28,0.85)'
+      background: 'rgba(8,16,28,0.85)',
+      depthTest: false,
+      renderOrder: 20,
     });
     label.position.copy(position);
     return label;
+  };
+
+  const getFloatingLabelPosition = (
+    anchorPoint,
+    options = {}
+  ) => {
+    const camera = cameraRef.current;
+    if (!camera) {
+      return anchorPoint.clone();
+    }
+
+    const cameraOffset = options.cameraOffset ?? 0.16;
+    const verticalOffset = options.verticalOffset ?? 0.08;
+    const cameraUp = camera.up.clone().normalize().multiplyScalar(verticalOffset);
+    const toCamera = camera.position.clone().sub(anchorPoint);
+
+    if (toCamera.lengthSq() < 1e-8) {
+      return anchorPoint.clone().add(cameraUp);
+    }
+
+    return anchorPoint.clone().add(toCamera.normalize().multiplyScalar(cameraOffset)).add(cameraUp);
+  };
+
+  const makeMarkerSprite = (text, position) => {
+    const sprite = createTextSprite(text, {
+      fontSize: 28,
+      padding: 14,
+      border: '#ffb703',
+      background: 'rgba(35,24,8,0.92)',
+      shape: 'bubble',
+      tailHeight: 14,
+      tailWidth: 20,
+      depthTest: false,
+      renderOrder: 24,
+    });
+    sprite.position.copy(getFloatingLabelPosition(position, { cameraOffset: 0.22, verticalOffset: 0.1 }));
+    return sprite;
+  };
+
+  const updateMarkerSpritePositions = () => {
+    for (const marker of markerObjectMapRef.current.values()) {
+      if (!marker.sphere || !marker.sprite) continue;
+      marker.sprite.position.copy(
+        getFloatingLabelPosition(marker.sphere.position, { cameraOffset: 0.22, verticalOffset: 0.1 })
+      );
+    }
+  };
+
+  const updateMeasurementLabelPositions = () => {
+    for (const measurement of measurementObjectMapRef.current.values()) {
+      if (!measurement.label || !measurement.labelAnchor) continue;
+      measurement.label.position.copy(
+        getFloatingLabelPosition(measurement.labelAnchor, { cameraOffset: 0.18, verticalOffset: 0.08 })
+      );
+    }
   };
 
   const replaceMeasurementLabel = (id, distanceMm, pointA, pointB) => {
@@ -1397,6 +1512,7 @@ const Medical3DCanvas = ({
     const nextLabel = makeMeasureLabel(`${distanceMm.toFixed(2)} mm`, mid);
     scene.add(nextLabel);
     measurement.label = nextLabel;
+    measurement.labelAnchor = mid.clone();
     measurement.distanceMm = distanceMm;
   };
 
@@ -1558,7 +1674,14 @@ const Medical3DCanvas = ({
     const label = makeMeasureLabel(`${distanceMm.toFixed(2)} mm`, mid);
     sceneRef.current.add(label);
 
-    measurementObjectMapRef.current.set(id, { id, line, label, markers: [a.marker, b.marker], sceneDistance });
+    measurementObjectMapRef.current.set(id, {
+      id,
+      line,
+      label,
+      labelAnchor: mid.clone(),
+      markers: [a.marker, b.marker],
+      sceneDistance,
+    });
     measurementDraftRef.current = [];
     setMeasurements((prev) => [...prev, {
       id,
@@ -1587,7 +1710,15 @@ const Medical3DCanvas = ({
     const mid = pointA.clone().add(pointB).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.1, 0));
     const label = makeMeasureLabel(`${resolvedDistanceMm.toFixed(2)} mm`, mid);
     sceneRef.current.add(mA, mB, line, label);
-    measurementObjectMapRef.current.set(id, { id, line, label, markers: [mA, mB], sceneDistance: pointA.distanceTo(pointB), distanceMm: resolvedDistanceMm });
+    measurementObjectMapRef.current.set(id, {
+      id,
+      line,
+      label,
+      labelAnchor: mid.clone(),
+      markers: [mA, mB],
+      sceneDistance: pointA.distanceTo(pointB),
+      distanceMm: resolvedDistanceMm,
+    });
     setMeasurements((prev) => [...prev, { id, distanceMm: resolvedDistanceMm, pointA: ptA, pointB: ptB }]);
   };
 
@@ -1635,31 +1766,33 @@ const Medical3DCanvas = ({
 
   const restoreEditorState = (state) => {
     if (!state) return;
-    const nextCalibration = normalizeSpatialCalibration(state.spatialCalibration) ?? createDefaultSpatialCalibration(modelMeta);
-    if (nextCalibration) {
-      applySpatialCalibration(nextCalibration, { silent: true });
-    }
-    setSpatialOrientation(normalizeSpatialOrientation(state.spatialOrientation));
-    if (state.markers?.length) {
-      state.markers.forEach((m) => addMarkerAtPoint(
-        new THREE.Vector3(m.position.x, m.position.y, m.position.z),
-        m.id,
-        m.label
-      ));
-    }
-    if (state.measurements?.length) {
-      state.measurements.forEach((m) => {
-        if (m.pointA && m.pointB) restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, nextCalibration);
-      });
-    }
-    if (state.camera && cameraRef.current && controlsRef.current) {
-      cameraRef.current.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
-      controlsRef.current.target.set(state.camera.target.x, state.camera.target.y, state.camera.target.z);
-      controlsRef.current.update();
-    }
-    if (state.segmentColors) {
-      applySegmentColors(state.segmentColors);
-    }
+    runWithoutEditorStateEmit(() => {
+      const nextCalibration = normalizeSpatialCalibration(state.spatialCalibration) ?? createDefaultSpatialCalibration(modelMeta);
+      if (nextCalibration) {
+        applySpatialCalibration(nextCalibration, { silent: true });
+      }
+      setSpatialOrientation(normalizeSpatialOrientation(state.spatialOrientation));
+      if (state.markers?.length) {
+        state.markers.forEach((m) => addMarkerAtPoint(
+          new THREE.Vector3(m.position.x, m.position.y, m.position.z),
+          m.id,
+          m.label
+        ));
+      }
+      if (state.measurements?.length) {
+        state.measurements.forEach((m) => {
+          if (m.pointA && m.pointB) restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, nextCalibration);
+        });
+      }
+      if (state.camera && cameraRef.current && controlsRef.current) {
+        cameraRef.current.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
+        controlsRef.current.target.set(state.camera.target.x, state.camera.target.y, state.camera.target.z);
+        controlsRef.current.update();
+      }
+      if (state.segmentColors) {
+        applySegmentColors(state.segmentColors);
+      }
+    });
   };
 
   const addMarkerAtPoint = (point, existingId = null, existingLabel = null) => {
@@ -1671,8 +1804,7 @@ const Medical3DCanvas = ({
       new THREE.MeshStandardMaterial({ color: 0xffc857, emissive: 0x663d00, emissiveIntensity: 0.3 })
     );
     sphere.position.copy(point);
-    const sprite = createTextSprite(label, { fontSize: 28, padding: 12, border: '#ffb703', background: 'rgba(30,20,6,0.85)' });
-    sprite.position.copy(point).add(new THREE.Vector3(0, 0.14, 0));
+    const sprite = makeMarkerSprite(label, point);
     sceneRef.current.add(sphere);
     sceneRef.current.add(sprite);
     markerObjectMapRef.current.set(id, { sphere, sprite });
@@ -1686,10 +1818,28 @@ const Medical3DCanvas = ({
     sceneRef.current.remove(obj.sprite);
     obj.sprite.material.map.dispose();
     obj.sprite.material.dispose();
-    const sprite = createTextSprite(newLabel, { fontSize: 28, padding: 12, border: '#ffb703', background: 'rgba(30,20,6,0.85)' });
-    sprite.position.copy(obj.sphere.position).add(new THREE.Vector3(0, 0.14, 0));
+    const sprite = makeMarkerSprite(newLabel, obj.sphere.position);
     sceneRef.current.add(sprite);
     obj.sprite = sprite;
+  };
+
+  const promptRenameMarker = (id) => {
+    const marker = markers.find((item) => item.id === id);
+    if (!marker) return;
+
+    const nextLabel = window.prompt('Edit annotation comment', marker.label);
+    if (nextLabel == null) return;
+
+    const normalizedLabel = nextLabel.trim();
+    if (!normalizedLabel) {
+      pushToast('Annotation comment cannot be empty.');
+      return;
+    }
+
+    if (normalizedLabel === marker.label) return;
+
+    renameMarker(id, normalizedLabel);
+    pushToast('Annotation updated.');
   };
 
   const deleteMarker = (id) => {
@@ -1763,25 +1913,27 @@ const Medical3DCanvas = ({
         }
       }
 
-      originalGeometryRef.current = null;
-      setCutApplied(false);
-      setSlicingEnabled(false);
-      clearMeasurements(true);
-      clearMarkers(true);
-      segmentPaintingRef.current = false;
-      segmentLastPaintPointRef.current = null;
-      setSegmentOffsetPreviewActive(false);
-      clearTrimHistory();
+      runWithoutEditorStateEmit(() => {
+        originalGeometryRef.current = null;
+        setCutApplied(false);
+        setSlicingEnabled(false);
+        clearMeasurements(true);
+        clearMarkers(true);
+        segmentPaintingRef.current = false;
+        segmentLastPaintPointRef.current = null;
+        setSegmentOffsetPreviewActive(false);
+        clearTrimHistory();
 
-      persistentModelRef.current = mesh;
-      updateSegmentMaterialState(mesh);
-      setImportedModel(mesh);
-      setActiveScene(4);
-      setModelMeta({ ...meta, extension });
-      setSpatialCalibration(createDefaultSpatialCalibration(meta));
-      setSpatialOrientation({ ...DEFAULT_SPATIAL_ORIENTATION });
-      frameCameraToModel(mesh);
-      queueSegmentPreviewRefresh();
+        persistentModelRef.current = mesh;
+        updateSegmentMaterialState(mesh);
+        setImportedModel(mesh);
+        setActiveScene(4);
+        setModelMeta({ ...meta, extension });
+        setSpatialCalibration(createDefaultSpatialCalibration(meta));
+        setSpatialOrientation({ ...DEFAULT_SPATIAL_ORIENTATION });
+        frameCameraToModel(mesh);
+        queueSegmentPreviewRefresh();
+      });
       pushToast(`${extension.toUpperCase()} model imported. Review import units in Model Info before relying on measurements.`);
       didSucceed = true;
     } catch (error) {
@@ -1837,19 +1989,43 @@ const Medical3DCanvas = ({
 
     initialEditorStateRef.current = initialEditorState;
     initialModelSignatureRef.current = signature;
+    const releaseEditorStateEmitSuppression = beginEditorStateEmitSuppression();
+    let didReleaseEditorStateEmitSuppression = false;
+    const finishInitialLoadCycle = () => {
+      if (didReleaseEditorStateEmitSuppression) {
+        return;
+      }
+      didReleaseEditorStateEmitSuppression = true;
+      window.setTimeout(() => {
+        releaseEditorStateEmitSuppression();
+      }, 0);
+    };
+
     onInitialModelStateChange?.('importing');
     void (async () => {
       const didSucceed = await loadModel(initialModelSource);
       if (didSucceed && initialEditorStateRef.current) {
         restoreEditorState(initialEditorStateRef.current);
       }
+      finishInitialLoadCycle();
       onInitialModelStateChange?.(didSucceed ? 'ready' : 'error');
     })();
+
+    return () => {
+      finishInitialLoadCycle();
+    };
   }, [initialModelSource, onInitialModelStateChange, initialEditorState]);
 
-  // Emit editor state to parent (debounced 1.5s) whenever annotations/measurements/paint change
+  // Emit editor state to parent quickly, then let the page-level saver coalesce DB writes.
   useEffect(() => {
     if (!onEditorStateChange) return;
+    if (suppressEditorStateEmitRef.current > 0) {
+      if (editorStateEmitTimerRef.current) {
+        clearTimeout(editorStateEmitTimerRef.current);
+        editorStateEmitTimerRef.current = null;
+      }
+      return;
+    }
     if (editorStateEmitTimerRef.current) clearTimeout(editorStateEmitTimerRef.current);
     editorStateEmitTimerRef.current = setTimeout(() => {
       onEditorStateChange({
@@ -1860,7 +2036,7 @@ const Medical3DCanvas = ({
         spatialCalibration: getEffectiveSpatialCalibration(),
         spatialOrientation: getResolvedSpatialOrientation(),
       });
-    }, 1500);
+    }, EDITOR_STATE_EMIT_DEBOUNCE_MS);
     return () => { if (editorStateEmitTimerRef.current) clearTimeout(editorStateEmitTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markers, measurements, onEditorStateChange, paintVersion, spatialCalibration, spatialOrientation]);
@@ -1873,56 +2049,58 @@ const Medical3DCanvas = ({
     if (appliedExternalStateRef.current === externalEditorState) return;
     appliedExternalStateRef.current = externalEditorState;
 
-    const externalCalibration = normalizeSpatialCalibration(externalEditorState.spatialCalibration);
-    if (externalCalibration) {
-      applySpatialCalibration(externalCalibration, { silent: true });
-    }
-    if (externalEditorState.spatialOrientation) {
-      setSpatialOrientation(getResolvedSpatialOrientation(externalEditorState.spatialOrientation));
-    }
-
-    // Sync markers: add any new ones not already present
-    const currentMarkerIds = new Set(markers.map((m) => m.id));
-    externalEditorState.markers?.forEach((m) => {
-      if (!currentMarkerIds.has(m.id)) {
-        addMarkerAtPoint(new THREE.Vector3(m.position.x, m.position.y, m.position.z), m.id, m.label);
+    runWithoutEditorStateEmit(() => {
+      const externalCalibration = normalizeSpatialCalibration(externalEditorState.spatialCalibration);
+      if (externalCalibration) {
+        applySpatialCalibration(externalCalibration, { silent: true });
       }
-    });
-    // Remove markers no longer in external state
-    const externalMarkerIds = new Set(externalEditorState.markers?.map((m) => m.id) ?? []);
-    markers.forEach((m) => {
-      if (!externalMarkerIds.has(m.id)) deleteMarker(m.id);
-    });
-
-    // Sync measurements: add new ones
-    const currentMeasurementIds = new Set(measurements.map((m) => m.id));
-    externalEditorState.measurements?.forEach((m) => {
-      if (!currentMeasurementIds.has(m.id) && m.pointA && m.pointB) {
-        restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, externalCalibration);
+      if (externalEditorState.spatialOrientation) {
+        setSpatialOrientation(getResolvedSpatialOrientation(externalEditorState.spatialOrientation));
       }
-    });
-    // Remove measurements no longer in external state
-    const externalMeasurementIds = new Set(externalEditorState.measurements?.map((m) => m.id) ?? []);
-    measurements.forEach((m) => {
-      if (!externalMeasurementIds.has(m.id)) {
-        const scene = sceneRef.current;
-        if (scene) {
-          const obj = measurementObjectMapRef.current.get(m.id);
-          if (obj) {
-            obj.markers.forEach((mk) => { scene.remove(mk); mk.geometry.dispose(); mk.material.dispose(); });
-            scene.remove(obj.line); obj.line.geometry.dispose(); obj.line.material.dispose();
-            scene.remove(obj.label); obj.label.material.map.dispose(); obj.label.material.dispose();
-            measurementObjectMapRef.current.delete(m.id);
-          }
+
+      // Sync markers: add any new ones not already present
+      const currentMarkerIds = new Set(markers.map((m) => m.id));
+      externalEditorState.markers?.forEach((m) => {
+        if (!currentMarkerIds.has(m.id)) {
+          addMarkerAtPoint(new THREE.Vector3(m.position.x, m.position.y, m.position.z), m.id, m.label);
         }
-        setMeasurements((prev) => prev.filter((x) => x.id !== m.id));
+      });
+      // Remove markers no longer in external state
+      const externalMarkerIds = new Set(externalEditorState.markers?.map((m) => m.id) ?? []);
+      markers.forEach((m) => {
+        if (!externalMarkerIds.has(m.id)) deleteMarker(m.id);
+      });
+
+      // Sync measurements: add new ones
+      const currentMeasurementIds = new Set(measurements.map((m) => m.id));
+      externalEditorState.measurements?.forEach((m) => {
+        if (!currentMeasurementIds.has(m.id) && m.pointA && m.pointB) {
+          restoreMeasurement(m.pointA, m.pointB, m.id, m.distanceMm, externalCalibration);
+        }
+      });
+      // Remove measurements no longer in external state
+      const externalMeasurementIds = new Set(externalEditorState.measurements?.map((m) => m.id) ?? []);
+      measurements.forEach((m) => {
+        if (!externalMeasurementIds.has(m.id)) {
+          const scene = sceneRef.current;
+          if (scene) {
+            const obj = measurementObjectMapRef.current.get(m.id);
+            if (obj) {
+              obj.markers.forEach((mk) => { scene.remove(mk); mk.geometry.dispose(); mk.material.dispose(); });
+              scene.remove(obj.line); obj.line.geometry.dispose(); obj.line.material.dispose();
+              scene.remove(obj.label); obj.label.material.map.dispose(); obj.label.material.dispose();
+              measurementObjectMapRef.current.delete(m.id);
+            }
+          }
+          setMeasurements((prev) => prev.filter((x) => x.id !== m.id));
+        }
+      });
+
+      // Sync paint
+      if (externalEditorState.segmentColors) {
+        applySegmentColors(externalEditorState.segmentColors);
       }
     });
-
-    // Sync paint
-    if (externalEditorState.segmentColors) {
-      applySegmentColors(externalEditorState.segmentColors);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalEditorState]);
 
@@ -2026,6 +2204,12 @@ const Medical3DCanvas = ({
         return;
       }
 
+      const markerId = getMarkerHitFromPointer(event);
+      if (markerId) {
+        promptRenameMarker(markerId);
+        return;
+      }
+
       if (activeTool !== 'measure' && activeTool !== 'annotate') return;
 
       const intersection = getPointerIntersection(event, false);
@@ -2075,7 +2259,7 @@ const Medical3DCanvas = ({
       window.removeEventListener('pointercancel', stopSegmentPainting);
       stopSegmentPainting();
     };
-  }, [activeTool, activeScene, importedModel, segmentBrushRadius, activeSegmentGroupId]);
+  }, [activeTool, activeScene, importedModel, markers, segmentBrushRadius, activeSegmentGroupId]);
 
   useEffect(() => {
     if (!gridHelperRef.current || !axesHelperRef.current) return;
@@ -2499,6 +2683,9 @@ const Medical3DCanvas = ({
     if (transformControlsRef.current) {
       transformControlsRef.current.update();
     }
+
+    updateMarkerSpritePositions();
+    updateMeasurementLabelPositions();
 
     objectsRef.current.forEach((obj, index) => {
       switch (activeScene) {
@@ -2979,6 +3166,7 @@ const Medical3DCanvas = ({
         showCommentsToggle={showCommentsToggle}
         commentsPanelOpen={commentsPanelOpen}
         onToggleCommentsPanel={onToggleCommentsPanel}
+        editorSaveStatus={editorSaveStatus}
       />
 
       <SlicerPanel

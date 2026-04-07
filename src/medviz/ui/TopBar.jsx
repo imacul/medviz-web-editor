@@ -42,7 +42,8 @@ const TopBar = ({
   onToggleCommentsPanel,
   showTourToggle = true,
   tourOpen = false,
-  onToggleTour
+  onToggleTour,
+  editorSaveStatus = null,
 }) => {
   const palette = getUiPalette(activeTheme, theme);
   const [openMenu, setOpenMenu] = useState(null);
@@ -80,6 +81,14 @@ const TopBar = ({
     opacity: disabled ? 0.5 : 1,
     cursor: disabled ? 'not-allowed' : 'pointer'
   });
+
+  const saveStatusMeta = editorSaveStatus
+    ? {
+        saving: { label: 'Saving', color: theme.accent },
+        saved: { label: 'Saved', color: activeTheme === 1 ? '#237a57' : '#7ef0bc' },
+        error: { label: 'Save failed', color: '#ff8f9f' }
+      }[editorSaveStatus]
+    : null;
 
   return (
     <div
@@ -226,6 +235,24 @@ const TopBar = ({
           >
             Team Comments
           </button>
+        ) : null}
+
+        {saveStatusMeta ? (
+          <div
+            aria-live="polite"
+            style={{
+              marginLeft: '4px',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: saveStatusMeta.color,
+              whiteSpace: 'nowrap',
+              opacity: 0.95,
+            }}
+          >
+            {saveStatusMeta.label}
+          </div>
         ) : null}
       </div>
 

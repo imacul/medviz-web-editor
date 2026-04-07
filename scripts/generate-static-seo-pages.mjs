@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { blogPostsData } from '../src/content/blogPostsData.js';
+import { getSitemapEntries } from '../src/content/indexingData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,12 +17,6 @@ const BLOG_TITLE = 'MedViz Blog | Faster 3D Case Review for Oral Surgery and Imp
 const BLOG_DESCRIPTION =
   'Buyer-focused articles on browser-based 3D case review, implant planning workflow, and faster collaboration for oral surgery teams.';
 const DEFAULT_IMAGE_ALT = 'MedViz 3D case review software for oral surgery and implant teams';
-
-const STATIC_SITEMAP_ENTRIES = [
-  { loc: `${SITE_URL}/`, lastmod: '2026-03-26', changefreq: 'daily', priority: '1.0' },
-  { loc: `${SITE_URL}/demo`, lastmod: '2026-03-26', changefreq: 'daily', priority: '0.95' },
-  { loc: `${SITE_URL}/business-profile-refund-policy`, lastmod: '2026-03-26', changefreq: 'weekly', priority: '0.6' },
-];
 
 function escapeHtml(value) {
   return String(value)
@@ -555,22 +550,10 @@ async function writeStaticBlogPages(assets) {
 }
 
 async function writeSitemap() {
-  const blogIndexLastmod = blogPostsData.reduce(
-    (latest, post) => (post.updatedAt > latest ? post.updatedAt : latest),
-    blogPostsData[0]?.updatedAt ?? '2026-04-01'
-  );
-
-  const blogEntries = [
-    { loc: `${SITE_URL}/blog`, lastmod: blogIndexLastmod, changefreq: 'weekly', priority: '0.9' },
-    ...blogPostsData.map((post) => ({
-      loc: getArticleUrl(post.slug),
-      lastmod: post.updatedAt,
-      changefreq: 'monthly',
-      priority: '0.8',
-    })),
-  ];
-
-  const sitemapEntries = [...STATIC_SITEMAP_ENTRIES, ...blogEntries];
+  const sitemapEntries = getSitemapEntries().map((entry) => ({
+    ...entry,
+    loc: getAbsoluteUrl(entry.path),
+  }));
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${sitemapEntries
@@ -589,10 +572,20 @@ ${sitemapEntries
   await fs.writeFile(path.join(distDir, 'sitemap.xml'), xml, 'utf8');
 }
 
+async function writeIndexNowKeyFile() {
+  const key = process.env.INDEXNOW_KEY?.trim();
+  if (!key) {
+    return;
+  }
+
+  await fs.writeFile(path.join(distDir, `${key}.txt`), key, 'utf8');
+}
+
 async function main() {
   const assets = await readAppShellAssets();
   await writeStaticBlogPages(assets);
   await writeSitemap();
+  await writeIndexNowKeyFile();
 }
 
 main().catch((error) => {

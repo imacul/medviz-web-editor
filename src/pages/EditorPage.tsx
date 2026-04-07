@@ -50,6 +50,17 @@ interface EditorOverlayState {
   variant?: 'blocking' | 'status';
 }
 
+interface EditorSaveBadgeState {
+  status: 'saving' | 'saved' | 'error';
+  title: string;
+  detail: string;
+}
+
+const getEditorStateSignature = (state: EditorState | null | undefined) =>
+  state ? JSON.stringify(state) : 'null';
+
+const EDITOR_STATE_SAVE_DEBOUNCE_MS = 400;
+
 const Medical3DCanvas = lazy(loadMedical3DCanvas);
 
 const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
@@ -71,11 +82,13 @@ const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
   showCommentsToggle?: boolean;
   commentsPanelOpen?: boolean;
   onToggleCommentsPanel?: () => void;
+  editorSaveStatus?: 'saving' | 'saved' | 'error' | null;
 }>;
 
 export default function EditorPage() {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const userId = user?.id ?? null;
   const [searchParams] = useSearchParams();
   const caseId = searchParams.get('caseId');
   const shareToken = searchParams.get('shareToken')?.trim() || null;
@@ -87,6 +100,7 @@ export default function EditorPage() {
   const lastSavedStateRef = useRef<EditorState | null>(null);
   const [overlayState, setOverlayState] = useState<EditorOverlayState | null>(null);
   const [saveState, setSaveState] = useState<EditorOverlayState | null>(null);
+  const [editorSaveBadgeState, setEditorSaveBadgeState] = useState<EditorSaveBadgeState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeModelLabel, setActiveModelLabel] = useState<string | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'share' | 'comments' | null>(null);
@@ -99,11 +113,11 @@ export default function EditorPage() {
 
     if (!caseId && !shareToken) {
       navigate(
-        user ? '/cases/new' : '/login?redirectTo=%2Feditor',
+        userId ? '/cases/new' : '/login?redirectTo=%2Feditor',
         { replace: true }
       );
     }
-  }, [caseId, isLoading, navigate, shareToken, user]);
+  }, [caseId, isLoading, navigate, shareToken, userId]);
 
   useEffect(() => {
     document.body.classList.add('editor-mode');
@@ -117,11 +131,13 @@ export default function EditorPage() {
     const abortController = new AbortController();
 
     if (!caseId && !shareToken) {
+      lastSavedStateRef.current = null;
       setInitialModelSource(null);
       setCaseRecord(null);
       setIsViewOnly(false);
       setOverlayState(null);
       setSaveState(null);
+      setEditorSaveBadgeState(null);
       setErrorMessage(null);
       setActiveModelLabel(null);
       return () => {
@@ -141,7 +157,7 @@ export default function EditorPage() {
             return;
           }
 
-          if (!user) {
+          if (!userId) {
             navigate(
               `/login?redirectTo=${encodeURIComponent(`/editor?caseId=${caseId}`)}`,
               { replace: true }
@@ -156,6 +172,7 @@ export default function EditorPage() {
           if (!localRecord) throw new Error('Local case not found in this browser.');
 
           const record = toLocalClinicalCase(localRecord);
+          lastSavedStateRef.current = record.editor_state ?? null;
           if (isMounted) setCaseRecord(record);
 
           if (!localRecord.modelFileName) return; // no model yet — open empty editor
@@ -202,9 +219,9 @@ export default function EditorPage() {
             throw new Error('Shared case not found or no longer available.');
           }
 
-          let sharedViewOnly = !user;
-          if (user) {
-            const isOwner = sharedRecord.created_by === user.id;
+          let sharedViewOnly = !userId;
+          if (userId) {
+            const isOwner = sharedRecord.created_by === userId;
             if (!isOwner) {
               const role = await getMyRoleInCase(sharedRecord.id);
               sharedViewOnly = role !== 'editor';
@@ -214,6 +231,7 @@ export default function EditorPage() {
           }
 
           if (isMounted) {
+            lastSavedStateRef.current = sharedRecord.editor_state ?? null;
             setCaseRecord(sharedRecord);
             setIsViewOnly(sharedViewOnly);
           }
@@ -304,7 +322,7 @@ export default function EditorPage() {
           throw new Error('Clinical case not found.');
         }
 
-        const isOwner = user?.id && record.created_by === user.id;
+        const isOwner = userId && record.created_by === userId;
         let viewOnly = false;
         if (!isOwner) {
           const role = await getMyRoleInCase(caseId);
@@ -312,6 +330,7 @@ export default function EditorPage() {
         }
 
         if (isMounted) {
+          lastSavedStateRef.current = record.editor_state ?? null;
           setCaseRecord(record);
           setIsViewOnly(viewOnly);
         }
@@ -409,7 +428,7 @@ export default function EditorPage() {
       isMounted = false;
       abortController.abort();
     };
-  }, [caseId, isLoading, navigate, shareToken, user]);
+  }, [caseId, isLoading, navigate, shareToken, userId]);
 
   const handleInitialModelStateChange = (state: InitialModelState) => {
     if (state === 'importing') {
@@ -448,14 +467,134 @@ export default function EditorPage() {
   };
 
   const editorStateSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingEditorStateRef = useRef<EditorState | null>(null);
+  const activeSaveRequestRef = useRef<Promise<void> | null>(null);
+  const editorSaveBadgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearEditorSaveBadgeTimer = useCallback(() => {
+    if (editorSaveBadgeTimerRef.current) {
+      clearTimeout(editorSaveBadgeTimerRef.current);
+      editorSaveBadgeTimerRef.current = null;
+    }
+  }, []);
+
+  const flushEditorStateToDatabase = useCallback((reason: 'debounce' | 'visibility' | 'unmount' = 'debounce') => {
+    if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
+      return Promise.resolve();
+    }
+
+    if (activeSaveRequestRef.current) {
+      return activeSaveRequestRef.current.then(() => flushEditorStateToDatabase(reason));
+    }
+
+    const nextState = pendingEditorStateRef.current;
+    if (!nextState) {
+      return Promise.resolve();
+    }
+
+    pendingEditorStateRef.current = null;
+    clearEditorSaveBadgeTimer();
+    setEditorSaveBadgeState({
+      status: 'saving',
+      title: 'Saving case changes',
+      detail: 'Updating annotations and measurements for this case.',
+    });
+    const savePromise = updateCaseEditorState(caseRecord.id, nextState)
+      .then(() => {
+        lastSavedStateRef.current = nextState;
+        setCaseRecord((prev) => (prev ? { ...prev, editor_state: nextState } : prev));
+        setEditorSaveBadgeState({
+          status: 'saved',
+          title: 'Saved to case',
+          detail: 'Annotations and measurements will reopen with this model.',
+        });
+        editorSaveBadgeTimerRef.current = window.setTimeout(() => {
+          setEditorSaveBadgeState((current) => (current?.status === 'saved' ? null : current));
+          editorSaveBadgeTimerRef.current = null;
+        }, 1800);
+      })
+      .catch((error) => {
+        console.warn(`Failed to save editor state on ${reason}.`, error);
+        pendingEditorStateRef.current = nextState;
+        setEditorSaveBadgeState({
+          status: 'error',
+          title: 'Save failed',
+          detail: 'The latest annotations and measurements have not reached the case yet.',
+        });
+      })
+      .finally(() => {
+        if (activeSaveRequestRef.current === savePromise) {
+          activeSaveRequestRef.current = null;
+        }
+      });
+
+    activeSaveRequestRef.current = savePromise;
+    return savePromise;
+  }, [caseRecord, clearEditorSaveBadgeTimer, isViewOnly]);
+
   const handleEditorStateChange = useCallback((state: EditorState) => {
     if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) return;
-    lastSavedStateRef.current = state;
+    const nextSignature = getEditorStateSignature(state);
+    const lastSavedSignature = getEditorStateSignature(lastSavedStateRef.current);
+    const pendingSignature = getEditorStateSignature(pendingEditorStateRef.current);
+    if (nextSignature === lastSavedSignature || nextSignature === pendingSignature) {
+      return;
+    }
+    pendingEditorStateRef.current = state;
+    clearEditorSaveBadgeTimer();
+    setEditorSaveBadgeState({
+      status: 'saving',
+      title: 'Saving case changes',
+      detail: 'Preparing annotations and measurements for sync.',
+    });
     if (editorStateSaveTimer.current) clearTimeout(editorStateSaveTimer.current);
     editorStateSaveTimer.current = setTimeout(() => {
-      void updateCaseEditorState(caseRecord.id, state).catch(() => undefined);
-    }, 2000);
-  }, [caseRecord, isViewOnly]);
+      void flushEditorStateToDatabase('debounce');
+    }, EDITOR_STATE_SAVE_DEBOUNCE_MS);
+  }, [caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase, isViewOnly]);
+
+  useEffect(() => {
+    if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
+      setEditorSaveBadgeState(null);
+      clearEditorSaveBadgeTimer();
+      return;
+    }
+
+    const flushOnHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        if (editorStateSaveTimer.current) {
+          clearTimeout(editorStateSaveTimer.current);
+          editorStateSaveTimer.current = null;
+        }
+        void flushEditorStateToDatabase('visibility');
+      }
+    };
+
+    const flushOnPageHide = () => {
+      if (editorStateSaveTimer.current) {
+        clearTimeout(editorStateSaveTimer.current);
+        editorStateSaveTimer.current = null;
+      }
+      void flushEditorStateToDatabase('unmount');
+    };
+
+    document.addEventListener('visibilitychange', flushOnHidden);
+    window.addEventListener('pagehide', flushOnPageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', flushOnHidden);
+      window.removeEventListener('pagehide', flushOnPageHide);
+    };
+  }, [caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase, isViewOnly]);
+
+  useEffect(() => () => {
+    if (editorStateSaveTimer.current) {
+      clearTimeout(editorStateSaveTimer.current);
+      editorStateSaveTimer.current = null;
+    }
+    clearEditorSaveBadgeTimer();
+    void flushEditorStateToDatabase('unmount');
+  }, [clearEditorSaveBadgeTimer, flushEditorStateToDatabase]);
 
   // Subscribe to real-time editor_state changes from other users
   const realtimeCaseId =
@@ -619,12 +758,12 @@ export default function EditorPage() {
       ? `/cases/${caseRecord.id}`
       : '/dashboard';
   const isCloudCase = Boolean(caseRecord && !isLocalCaseId(caseRecord.id));
-  const isCaseOwner = Boolean(caseRecord && user?.id && caseRecord.created_by === user.id);
+  const isCaseOwner = Boolean(caseRecord && userId && caseRecord.created_by === userId);
   const shareUrl = caseRecord?.share_token
     ? `${window.location.origin}/share/${caseRecord.share_token}`
     : null;
   const isPublicCase = caseRecord?.visibility === 'public';
-  const requiresTeamSignup = Boolean(shareToken && !user);
+  const requiresTeamSignup = Boolean(shareToken && !userId);
   const teamPromptMode =
     requiresTeamSignup && (activeDrawer === 'share' || activeDrawer === 'comments')
       ? activeDrawer
@@ -706,6 +845,7 @@ export default function EditorPage() {
           showCommentsToggle={isCloudCase}
           commentsPanelOpen={activeDrawer === 'comments'}
           onToggleCommentsPanel={isCloudCase ? handleToggleCommentsDrawer : undefined}
+          editorSaveStatus={isCloudCase && !isViewOnly ? editorSaveBadgeState?.status ?? null : null}
         />
       </Suspense>
 
