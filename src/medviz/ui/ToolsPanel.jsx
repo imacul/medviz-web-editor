@@ -265,10 +265,16 @@ const ToolsPanel = ({
                   onChange={(e) => onRenameMarker(marker.id, e.target.value)}
                   style={{
                     fontSize: '12px',
-                    padding: '6px',
-                    borderRadius: '6px',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
                     border: `1px solid ${palette.border}`,
-                    background: '#fff'
+                    background: activeTheme === 1 ? 'rgba(255,255,255,0.92)' : 'rgba(9,22,39,0.92)',
+                    color: palette.text,
+                    outline: 'none',
+                    boxShadow:
+                      activeTheme === 1
+                        ? 'inset 0 1px 2px rgba(15,23,42,0.08)'
+                        : 'inset 0 1px 2px rgba(0,0,0,0.28)',
                   }}
                 />
                 <button onClick={() => onDeleteMarker(marker.id)} style={getToolButtonStyle(false, palette)}>
