@@ -50,6 +50,7 @@ export default function App() {
         />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/ops" element={<Navigate to="/dashboard" replace />} />
           <Route path="/cases/new" element={<CreateCasePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/cases/:caseId/edit" element={<EditCasePage />} />

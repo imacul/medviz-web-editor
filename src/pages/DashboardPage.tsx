@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router';
 
 import SiteHeader from '../components/SiteHeader';
 import logoSvg from '../../assets/medviz-logo.svg';
-import { useAuth } from '../features/auth/AuthProvider';
 import {
   deleteCase,
   deleteCaseModel,
@@ -28,7 +27,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [cases, setCases] = useState<ClinicalCase[]>([]);
   const [memberCaseIds, setMemberCaseIds] = useState<Set<string>>(new Set());
   const [isLoadingCases, setIsLoadingCases] = useState(true);
@@ -173,9 +171,7 @@ export default function DashboardPage() {
                   <h1 className="font-display text-3xl font-bold tracking-tight text-medviz-ink">
                     Case List
                   </h1>
-                  <p className="mt-1 text-sm text-white/60">
-                    {user?.email || 'MedViz'}
-                  </p>
+                  <p className="mt-1 text-sm text-white/60">Private workspace</p>
                 </div>
               </div>
 

@@ -341,19 +341,33 @@ export default function LandingPage({
         actions={headerActions}
       />
 
-      <section className="lp__hero" id="hero">
+      <section className="lp__hero lp__hero--immersive" id="hero">
+        <div className="lp__hero-backdrop" aria-hidden="true">
+          <video
+            className="lp__hero-bg-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={ss6}
+          >
+            <source src={`${walkthroughVideo}#t=0,90`} type="video/mp4" />
+          </video>
+          <div className="lp__hero-backdrop-grid" />
+          <div className="lp__hero-backdrop-scrim" />
+        </div>
         <div className="lp__hero-glow" />
-        <div className="lp__hero-grid">
-          <div className="lp__hero-copy">
+        <div className="lp__hero-frame">
+          <div className="lp__hero-grid">
+            <div className="lp__hero-copy lp__hero-copy-shell">
             <div className="lp__badge">
               <span className="lp__badge-dot" />
               Free access live now - no signup, no call needed
             </div>
 
             <h1>
-              Move from model import to
-              <br />
-              <span className="lp__highlight">clearer treatment decisions faster</span>
+              Move from model import to <span className="lp__highlight">clearer treatment decisions faster</span>
             </h1>
 
             <p className="lp__hero-sub">
@@ -399,36 +413,8 @@ export default function LandingPage({
                 </div>
               ))}
             </div>
-          </div>
+            </div>
 
-          <div className="lp__hero-surface">
-            <div className="lp__browser-bar">
-              <div className="lp__dot lp__dot--r" />
-              <div className="lp__dot lp__dot--y" />
-              <div className="lp__dot lp__dot--g" />
-              <div className="lp__url-bar">www.medviz3d.com / private review portal</div>
-            </div>
-            <ProgressiveImage
-              className="lp__hero-image"
-              src={ss5}
-              alt="MedViz editor showing a mandible review workflow"
-              eager
-              fetchPriority="high"
-            />
-            <div className="lp__surface-card lp__surface-card--top">
-              <FiLock size={16} />
-              <div>
-                <strong>Free instant access</strong>
-                <span>Open demo cases now without signup</span>
-              </div>
-            </div>
-            <div className="lp__surface-card lp__surface-card--bottom">
-              <FiClock size={16} />
-              <div>
-                <strong>Fast to evaluate</strong>
-                <span>Measure, annotate, share, and export in minutes</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>

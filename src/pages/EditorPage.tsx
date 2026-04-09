@@ -167,8 +167,9 @@ export default function EditorPage() {
         }
 
         // ── Local (browser-only) case path ──────────────────────────────────
-        if (isLocalCaseId(caseId)) {
-          const localRecord = getLocalCase(caseId);
+        if (caseId && isLocalCaseId(caseId)) {
+          const localCaseId = caseId;
+          const localRecord = getLocalCase(localCaseId);
           if (!localRecord) throw new Error('Local case not found in this browser.');
 
           const record = toLocalClinicalCase(localRecord);
@@ -188,7 +189,7 @@ export default function EditorPage() {
             });
           }
 
-          const cachedFile = await getLocalCaseModelFile(caseId, localRecord.modelFileName).catch(
+          const cachedFile = await getLocalCaseModelFile(localCaseId, localRecord.modelFileName).catch(
             () => null
           );
 
@@ -204,7 +205,7 @@ export default function EditorPage() {
               setInitialModelSource(cachedFile);
             } else {
               // Metadata says there's a model but the file is gone — clear the ref
-              updateLocalCase(caseId, { modelFileName: null });
+              updateLocalCase(localCaseId, { modelFileName: null });
               setOverlayState(null);
             }
           }
@@ -316,7 +317,12 @@ export default function EditorPage() {
           return;
         }
 
-        const record = await getCaseById(caseId);
+        if (!caseId) {
+          throw new Error('Clinical case not found.');
+        }
+
+        const cloudCaseId = caseId;
+        const record = await getCaseById(cloudCaseId);
 
         if (!record) {
           throw new Error('Clinical case not found.');
@@ -325,7 +331,7 @@ export default function EditorPage() {
         const isOwner = userId && record.created_by === userId;
         let viewOnly = false;
         if (!isOwner) {
-          const role = await getMyRoleInCase(caseId);
+          const role = await getMyRoleInCase(cloudCaseId);
           viewOnly = role === 'viewer';
         }
 
@@ -478,59 +484,62 @@ export default function EditorPage() {
     }
   }, []);
 
-  const flushEditorStateToDatabase = useCallback((reason: 'debounce' | 'visibility' | 'unmount' = 'debounce') => {
-    if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
-      return Promise.resolve();
-    }
+  const flushEditorStateToDatabase = useCallback(
+    (reason: 'debounce' | 'visibility' | 'unmount' = 'debounce'): Promise<void> => {
+      if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
+        return Promise.resolve();
+      }
 
-    if (activeSaveRequestRef.current) {
-      return activeSaveRequestRef.current.then(() => flushEditorStateToDatabase(reason));
-    }
+      if (activeSaveRequestRef.current) {
+        return activeSaveRequestRef.current.then(() => flushEditorStateToDatabase(reason));
+      }
 
-    const nextState = pendingEditorStateRef.current;
-    if (!nextState) {
-      return Promise.resolve();
-    }
+      const nextState = pendingEditorStateRef.current;
+      if (!nextState) {
+        return Promise.resolve();
+      }
 
-    pendingEditorStateRef.current = null;
-    clearEditorSaveBadgeTimer();
-    setEditorSaveBadgeState({
-      status: 'saving',
-      title: 'Saving case changes',
-      detail: 'Updating annotations and measurements for this case.',
-    });
-    const savePromise = updateCaseEditorState(caseRecord.id, nextState)
-      .then(() => {
-        lastSavedStateRef.current = nextState;
-        setCaseRecord((prev) => (prev ? { ...prev, editor_state: nextState } : prev));
-        setEditorSaveBadgeState({
-          status: 'saved',
-          title: 'Saved to case',
-          detail: 'Annotations and measurements will reopen with this model.',
-        });
-        editorSaveBadgeTimerRef.current = window.setTimeout(() => {
-          setEditorSaveBadgeState((current) => (current?.status === 'saved' ? null : current));
-          editorSaveBadgeTimerRef.current = null;
-        }, 1800);
-      })
-      .catch((error) => {
-        console.warn(`Failed to save editor state on ${reason}.`, error);
-        pendingEditorStateRef.current = nextState;
-        setEditorSaveBadgeState({
-          status: 'error',
-          title: 'Save failed',
-          detail: 'The latest annotations and measurements have not reached the case yet.',
-        });
-      })
-      .finally(() => {
-        if (activeSaveRequestRef.current === savePromise) {
-          activeSaveRequestRef.current = null;
-        }
+      pendingEditorStateRef.current = null;
+      clearEditorSaveBadgeTimer();
+      setEditorSaveBadgeState({
+        status: 'saving',
+        title: 'Saving case changes',
+        detail: 'Updating annotations and measurements for this case.',
       });
+      const savePromise: Promise<void> = updateCaseEditorState(caseRecord.id, nextState)
+        .then(() => {
+          lastSavedStateRef.current = nextState;
+          setCaseRecord((prev) => (prev ? { ...prev, editor_state: nextState } : prev));
+          setEditorSaveBadgeState({
+            status: 'saved',
+            title: 'Saved to case',
+            detail: 'Annotations and measurements will reopen with this model.',
+          });
+          editorSaveBadgeTimerRef.current = window.setTimeout(() => {
+            setEditorSaveBadgeState((current) => (current?.status === 'saved' ? null : current));
+            editorSaveBadgeTimerRef.current = null;
+          }, 1800);
+        })
+        .catch((error) => {
+          console.warn(`Failed to save editor state on ${reason}.`, error);
+          pendingEditorStateRef.current = nextState;
+          setEditorSaveBadgeState({
+            status: 'error',
+            title: 'Save failed',
+            detail: 'The latest annotations and measurements have not reached the case yet.',
+          });
+        })
+        .finally(() => {
+          if (activeSaveRequestRef.current === savePromise) {
+            activeSaveRequestRef.current = null;
+          }
+        });
 
-    activeSaveRequestRef.current = savePromise;
-    return savePromise;
-  }, [caseRecord, clearEditorSaveBadgeTimer, isViewOnly]);
+      activeSaveRequestRef.current = savePromise;
+      return savePromise;
+    },
+    [caseRecord, clearEditorSaveBadgeTimer, isViewOnly]
+  );
 
   const handleEditorStateChange = useCallback((state: EditorState) => {
     if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) return;
