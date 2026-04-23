@@ -26,6 +26,8 @@ const TopBar = ({
   onImportClick,
   isImporting,
   readOnly = false,
+  onBlockedImportClick = null,
+  onNewCaseImportClick = null,
   onExportStl,
   onExportObj,
   onExportPng,
@@ -89,6 +91,25 @@ const TopBar = ({
         error: { label: 'Save failed', color: '#ff8f9f' }
       }[editorSaveStatus]
     : null;
+  const importBlockedBySignup = Boolean(readOnly && onBlockedImportClick);
+  const importStartsNewCase = Boolean(hasImportedModel && onNewCaseImportClick);
+  const importActionAvailable =
+    importBlockedBySignup || importStartsNewCase || (!readOnly && onImportClick);
+  const importDisabled = isImporting || !importActionAvailable;
+
+  const handleImportButtonClick = () => {
+    if (isImporting) return;
+    if (importBlockedBySignup) {
+      onBlockedImportClick();
+      return;
+    }
+    if (importStartsNewCase) {
+      onNewCaseImportClick();
+      return;
+    }
+    if (readOnly || !onImportClick) return;
+    onImportClick();
+  };
 
   return (
     <div
@@ -142,18 +163,18 @@ const TopBar = ({
       </div>
 
       <button
-        onClick={readOnly ? undefined : onImportClick}
-        disabled={isImporting || readOnly}
+        onClick={handleImportButtonClick}
+        disabled={importDisabled}
         data-tour-id="import-button"
         style={{
           padding: isCompact ? '8px 11px' : '8px 12px',
-          backgroundColor: readOnly ? 'rgba(255,255,255,0.12)' : theme.accent,
-          color: readOnly ? 'rgba(255,255,255,0.35)' : '#ffffff',
+          backgroundColor: importDisabled ? 'rgba(255,255,255,0.12)' : theme.accent,
+          color: importDisabled ? 'rgba(255,255,255,0.35)' : '#ffffff',
           border: 'none',
           borderRadius: '8px',
           fontSize: '12px',
           fontWeight: 700,
-          cursor: (isImporting || readOnly) ? 'not-allowed' : 'pointer',
+          cursor: importDisabled ? 'not-allowed' : 'pointer',
           whiteSpace: 'nowrap',
           flex: '0 0 auto'
         }}

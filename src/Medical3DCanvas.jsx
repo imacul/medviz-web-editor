@@ -107,6 +107,8 @@ const Medical3DCanvas = ({
   commentsPanelOpen = false,
   onToggleCommentsPanel = null,
   editorSaveStatus = null,
+  onBlockedImportClick = null,
+  onNewCaseImportClick = null,
 }) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
@@ -3149,6 +3151,8 @@ const Medical3DCanvas = ({
         onImportClick={() => fileInputRef.current.click()}
         isImporting={isImporting}
         readOnly={readOnly}
+        onBlockedImportClick={onBlockedImportClick}
+        onNewCaseImportClick={onNewCaseImportClick}
         onExportStl={exportCurrentModelStl}
         onExportObj={exportCurrentModelObj}
         onExportPng={exportScreenshot}

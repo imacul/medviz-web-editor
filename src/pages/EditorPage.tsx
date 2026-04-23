@@ -56,6 +56,13 @@ interface EditorSaveBadgeState {
   detail: string;
 }
 
+interface ImportSignupPromptState {
+  title: string;
+  description: string;
+  loginTo: string;
+  signupTo: string;
+}
+
 const getEditorStateSignature = (state: EditorState | null | undefined) =>
   state ? JSON.stringify(state) : 'null';
 
@@ -83,6 +90,8 @@ const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
   commentsPanelOpen?: boolean;
   onToggleCommentsPanel?: () => void;
   editorSaveStatus?: 'saving' | 'saved' | 'error' | null;
+  onBlockedImportClick?: () => void;
+  onNewCaseImportClick?: () => void;
 }>;
 
 export default function EditorPage() {
@@ -101,6 +110,7 @@ export default function EditorPage() {
   const [overlayState, setOverlayState] = useState<EditorOverlayState | null>(null);
   const [saveState, setSaveState] = useState<EditorOverlayState | null>(null);
   const [editorSaveBadgeState, setEditorSaveBadgeState] = useState<EditorSaveBadgeState | null>(null);
+  const [importSignupPrompt, setImportSignupPrompt] = useState<ImportSignupPromptState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeModelLabel, setActiveModelLabel] = useState<string | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'share' | 'comments' | null>(null);
@@ -138,6 +148,7 @@ export default function EditorPage() {
       setOverlayState(null);
       setSaveState(null);
       setEditorSaveBadgeState(null);
+      setImportSignupPrompt(null);
       setErrorMessage(null);
       setActiveModelLabel(null);
       return () => {
@@ -150,6 +161,7 @@ export default function EditorPage() {
       setErrorMessage(null);
       setInitialModelSource(null);
       setOverlayState(null);
+      setImportSignupPrompt(null);
 
       try {
         if (!shareToken && caseId && !isLocalCaseId(caseId)) {
@@ -783,6 +795,11 @@ export default function EditorPage() {
   const commentsDrawerRedirectTo = shareToken
     ? `/editor?shareToken=${encodeURIComponent(shareToken)}&drawer=comments`
     : '/dashboard';
+  const currentEditorPath = (() => {
+    const query = searchParams.toString();
+    return query ? `/editor?${query}` : '/editor';
+  })();
+  const canPromptForImportSignup = Boolean(shareToken && !userId);
 
   useEffect(() => {
     if (!isCloudCase && activeDrawer) {
@@ -814,6 +831,24 @@ export default function EditorPage() {
     setShareLinkCopied(true);
     window.setTimeout(() => setShareLinkCopied(false), 1800);
   };
+
+  const handleBlockedImportClick = useCallback(() => {
+    if (!canPromptForImportSignup) {
+      return;
+    }
+
+    setImportSignupPrompt({
+      title: 'Create an account to import your own model',
+      description:
+        'You can explore this shared case without an account. To import a new model into MedViz, sign in or create an account first.',
+      loginTo: currentEditorPath,
+      signupTo: currentEditorPath,
+    });
+  }, [canPromptForImportSignup, currentEditorPath]);
+
+  const handleNewCaseImportClick = useCallback(() => {
+    navigate('/cases/new');
+  }, [navigate]);
 
   return (
     <div className="relative min-h-screen">
@@ -855,6 +890,8 @@ export default function EditorPage() {
           commentsPanelOpen={activeDrawer === 'comments'}
           onToggleCommentsPanel={isCloudCase ? handleToggleCommentsDrawer : undefined}
           editorSaveStatus={isCloudCase && !isViewOnly ? editorSaveBadgeState?.status ?? null : null}
+          onBlockedImportClick={canPromptForImportSignup ? handleBlockedImportClick : undefined}
+          onNewCaseImportClick={userId ? handleNewCaseImportClick : undefined}
         />
       </Suspense>
 
@@ -1051,6 +1088,51 @@ export default function EditorPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {importSignupPrompt ? (
+        <div className="absolute inset-0 z-128 flex items-center justify-center bg-[rgba(6,15,26,0.72)] px-4">
+          <div className="w-full max-w-lg rounded-[32px] border border-medviz-line/80 bg-[linear-gradient(160deg,rgba(9,22,39,0.96),rgba(15,39,69,0.92))] px-7 py-7 text-white shadow-[0_30px_90px_rgba(3,10,18,0.55)] backdrop-blur">
+            <p className="inline-flex w-fit items-center gap-2 rounded-full border border-medviz-line/60 bg-[rgba(7,17,31,0.82)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.3em] text-medviz-gold">
+              <FiLock className="h-3.5 w-3.5" />
+              Import Model
+            </p>
+            <h2 className="mt-4 font-display text-3xl font-bold text-medviz-ink">
+              {importSignupPrompt.title}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-white/70">
+              {importSignupPrompt.description}
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                to={`/signup?redirectTo=${encodeURIComponent(importSignupPrompt.signupTo)}`}
+                className="inline-flex items-center gap-2 rounded-full bg-medviz-accent px-5 py-3 text-sm font-semibold text-[#060f1a] transition hover:bg-[#7ad9ff]"
+              >
+                Create Account
+                <FiArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to={`/login?redirectTo=${encodeURIComponent(importSignupPrompt.loginTo)}`}
+                className="inline-flex items-center gap-2 rounded-full border border-medviz-line bg-[rgba(9,22,39,0.92)] px-5 py-3 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+              >
+                Sign In
+              </Link>
+              <button
+                type="button"
+                onClick={() => setImportSignupPrompt(null)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-transparent px-5 py-3 text-sm font-semibold text-white/72 transition hover:border-white/26 hover:text-white"
+              >
+                Continue Viewing
+              </button>
+            </div>
+
+            <p className="mt-5 text-xs leading-5 text-white/48">
+              You can keep inspecting this shared model without an account. Importing your own files
+              is reserved for signed-in MedViz users.
+            </p>
           </div>
         </div>
       ) : null}
