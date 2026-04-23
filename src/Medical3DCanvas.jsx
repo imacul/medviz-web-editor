@@ -129,10 +129,11 @@ const Medical3DCanvas = ({
   const [showSlicePlane, setShowSlicePlane] = useState(true);
   const [showSlicerPanel, setShowSlicerPanel] = useState(false);
   const [showToolsPanel, setShowToolsPanel] = useState(false);
-  const [showModelInfoPanel, setShowModelInfoPanel] = useState(getInitialViewportWidth() >= 768);
+  const [showModelInfoPanel, setShowModelInfoPanel] = useState(false);
   const [showOrientationCard, setShowOrientationCard] = useState(true);
   const [transformMode, setTransformMode] = useState('translate'); // 'translate' or 'rotate'
   const [gizmosEnabled, setGizmosEnabled] = useState(false);
+  const orientationCubeRef = useRef(null);
   const [cutApplied, setCutApplied] = useState(false);
   const [modelMeta, setModelMeta] = useState(null);
   const [spatialCalibration, setSpatialCalibration] = useState(null);
@@ -2686,6 +2687,14 @@ const Medical3DCanvas = ({
       transformControlsRef.current.update();
     }
 
+    if (orientationCubeRef.current && cameraRef.current) {
+      const euler = new THREE.Euler().setFromQuaternion(cameraRef.current.quaternion, 'YXZ');
+      const rx = THREE.MathUtils.radToDeg(euler.x);
+      const ry = THREE.MathUtils.radToDeg(euler.y);
+      const rz = THREE.MathUtils.radToDeg(euler.z);
+      orientationCubeRef.current.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+    }
+
     updateMarkerSpritePositions();
     updateMeasurementLabelPositions();
 
@@ -3325,54 +3334,37 @@ const Medical3DCanvas = ({
             position: 'absolute',
             top: isMobileViewport ? '118px' : '78px',
             left: '16px',
-            minWidth: isMobileViewport ? 'auto' : '220px',
-            maxWidth: isMobileViewport ? 'calc(100vw - 32px)' : '280px',
-            padding: '10px 12px',
-            borderRadius: '14px',
-            background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.92)' : 'rgba(12, 20, 32, 0.84)',
-            border: `1px solid ${activeTheme === 1 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)'}`,
+            width: '86px',
+            height: '86px',
+            padding: '10px',
+            borderRadius: '18px',
+            background: activeTheme === 1 ? 'rgba(255, 255, 255, 0.86)' : 'rgba(12, 20, 32, 0.76)',
+            border: `1px solid ${activeTheme === 1 ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.14)'}`,
             color: activeTheme === 1 ? '#1f2a3a' : '#d8deec',
-            fontSize: '11px',
-            lineHeight: 1.5,
             zIndex: 118,
             backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: activeTheme === 1 ? '0 12px 24px rgba(0,0,0,0.08)' : '0 18px 36px rgba(0,0,0,0.32)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
-            <div style={{ fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7 }}>
-              Orientation
-            </div>
-            <button
-              onClick={() => setShowOrientationCard(false)}
+          <div style={{ width: '100%', height: '100%', perspective: '220px' }}>
+            <div
+              ref={orientationCubeRef}
               style={{
-                border: 'none',
-                background: 'transparent',
-                color: activeTheme === 1 ? '#5a6372' : '#9ca3af',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 700,
-                lineHeight: 1,
-                padding: 0
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+                transform: 'rotateX(25deg) rotateY(40deg)'
               }}
-              aria-label="Hide orientation card"
-              title="Hide orientation card"
             >
-              ×
-            </button>
-          </div>
-          {orientationAxisSummary.status === 'confirmed' ? (
-            <>
-              {orientationAxisSummary.axes.map((axisInfo) => (
-                <div key={axisInfo.axis}>
-                  <strong>{axisInfo.axis}:</strong> +{axisInfo.positive.shortLabel} / -{axisInfo.negative.shortLabel}
-                </div>
-              ))}
-            </>
-          ) : (
-            <div style={{ opacity: 0.8 }}>
-              Anatomical orientation is not confirmed yet. Confirm +X/+Y/+Z in Model Info before clinical review.
+              <div style={{ position: 'absolute', width: '100%', height: '100%', background: 'rgba(63, 156, 255, 0.92)', border: '1px solid rgba(255,255,255,0.18)', transform: 'translateZ(24px)' }} />
+              <div style={{ position: 'absolute', width: '100%', height: '100%', background: 'rgba(97, 216, 140, 0.92)', border: '1px solid rgba(255,255,255,0.18)', transform: 'rotateY(90deg) translateZ(24px)' }} />
+              <div style={{ position: 'absolute', width: '100%', height: '100%', background: 'rgba(251, 195, 92, 0.92)', border: '1px solid rgba(255,255,255,0.18)', transform: 'rotateX(90deg) translateZ(24px)' }} />
             </div>
-          )}
+          </div>
         </div>
       ) : null}
 

@@ -1,0 +1,56 @@
+Hi Emmanuel,
+
+Here is the current MedViz surgeon outreach batch for your review before anything is sent.
+
+Live app:
+https://medviz-web-editor.vercel.app/
+
+Campaign summary:
+- Goal: recruit a small first batch of oral and maxillofacial surgeons to test MedViz and give blunt workflow feedback
+- Audience: academic / residency-leading OMFS surgeons with public professional emails
+- Batch size: 5
+- Channel: cold email
+- CTA: try the live app on a de-identified case or short demo and reply with honest feedback
+
+Proposed leads:
+1. Jeffrey H. Brooks, DMD - jbrook27@uthsc.edu
+   Reason: Chair, Oral and Maxillofacial Surgery, UTHSC
+
+2. Brett A. Wilson, DDS - bwilso85@uthsc.edu
+   Reason: Program Director, Oral and Maxillofacial Surgery, UTHSC
+
+3. Sloan Ashabranner, DDS - sashabra@uthsc.edu
+   Reason: OMFS faculty, UTHSC
+
+4. Dale A. Baur, DDS - dale.baur@case.edu
+   Reason: Chair, OMFS, Case Western; reconstructive/head and neck fit
+
+5. Andrew M. Read-Fuller, DDS, MD - readfuller@tamu.edu
+   Reason: Program Director, Texas A&M OMFS
+
+Sample proposed outreach:
+
+Subject:
+Quick feedback on a 3D maxillofacial case review tool?
+
+Body:
+Hi Dr. Brooks,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because you lead Oral and Maxillofacial Surgery at UTHSC, and I thought you might have a strong view on whether this kind of workflow is actually useful in practice.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, confusing, or unnecessary.
+
+Thanks,
+Emmanuel
+
+Files prepared locally:
+- C:\Users\HP\Documents\medviz_web_editor\outreach\medviz_surgeon_leads_2026-03-18.md
+- C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_batch_medviz_surgeons_2026-03-18.csv
+
+No surgeon emails have been sent yet.

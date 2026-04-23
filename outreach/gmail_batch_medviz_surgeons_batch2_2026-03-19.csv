@@ -1,0 +1,71 @@
+email,subject,body,cc,bcc,reply_to
+Paul-Tiwana@ouhsc.edu,Would you test a browser-based 3D OMFS review workflow?,"Hi Dr. Tiwana,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because your OUHSC faculty profile highlights leadership across facial trauma, orthognathic surgery, and cleft/craniofacial work, which made you seem like a strong fit for blunt feedback on whether this type of review workflow is genuinely useful.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, what feels risky, and what would not survive real clinical use.
+
+Thanks,
+Emmanuel",,,
+mmiloro@uic.edu,Quick feedback on an early 3D maxillofacial review tool?,"Hi Dr. Miloro,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because your UIC profile combines department leadership with interests in bone healing, implantology, distraction osteogenesis, and orthognathic surgery, which seemed like a strong match for this kind of product feedback.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels clinically useful, what is missing, and what should be simplified.
+
+Thanks,
+Emmanuel",,,
+abburke@uw.edu,Could I get honest feedback on a 3D maxillofacial case review tool?,"Hi Dr. Burke,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I thought of you because the UW research directory highlights your work in craniofacial disorders and bone-related maxillofacial disease, and I wanted feedback from someone who sees both surgical and pathology-heavy cases.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels practical, what feels off, and where the workflow still lacks clinical trust.
+
+Thanks,
+Emmanuel",,,
+agaal@uw.edu,Would you be open to testing a 3D OMFS review workflow?,"Hi Dr. Gaal,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because your UW profile describes a trauma, orthognathic, and cleft-focused practice, which seemed like a strong fit for testing whether this kind of review workflow actually helps in complex craniofacial cases.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, what slows them down, and what needs to be sharper.
+
+Thanks,
+Emmanuel",,,
+dfreburg@ufl.edu,Would you test an early browser-based 3D case review tool?,"Hi Dr. Freburg-Hoffmeister,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I thought of you because your UF profile combines program leadership with active oral surgery, implant, and TMJ interests, which made you seem like a strong fit for feedback on both workflow and training usability.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels clinically relevant, what feels unnecessary, and what is still missing.
+
+Thanks,
+Emmanuel",,,

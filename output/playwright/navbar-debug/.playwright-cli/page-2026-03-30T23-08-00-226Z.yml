@@ -1,0 +1,288 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - button "MedViz logo MedViz" [ref=e6] [cursor=pointer]:
+        - img "MedViz logo" [ref=e7]
+        - generic [ref=e8]:
+          - text: Med
+          - emphasis [ref=e9]: Viz
+      - navigation [ref=e10]:
+        - link "Free Demo" [ref=e11] [cursor=pointer]:
+          - /url: /demo
+        - link "Offer" [ref=e12] [cursor=pointer]:
+          - /url: "#offer"
+        - link "Pilot Flow" [ref=e13] [cursor=pointer]:
+          - /url: "#workflow"
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: "#pricing"
+        - link "See It" [ref=e15] [cursor=pointer]:
+          - /url: "#screenshots"
+        - link "Contact" [ref=e16] [cursor=pointer]:
+          - /url: "#feedback"
+      - generic [ref=e17]:
+        - button "Log in" [ref=e18] [cursor=pointer]
+        - button "Sign up" [ref=e19] [cursor=pointer]
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: Free access live now - no signup, no call needed
+      - heading "Free browser-based 3D case review for oral surgery and implant teams" [level=1] [ref=e25]:
+        - text: Free browser-based 3D case review
+        - text: for oral surgery and implant teams
+      - paragraph [ref=e26]: Measure, annotate, collaborate via links, and generate reports. Try with sample cases instantly. Paid guided pilots are available only if you want custom setup for your team.
+      - generic [ref=e27]:
+        - button "Try MedViz Free Now - No Signup, No Call Needed" [ref=e28] [cursor=pointer]:
+          - text: Try MedViz Free Now - No Signup, No Call Needed
+          - img [ref=e29]
+        - button "Watch 60-sec walkthrough" [ref=e31] [cursor=pointer]:
+          - img [ref=e32]
+          - text: Watch 60-sec walkthrough
+        - button "Request custom setup by email" [ref=e34] [cursor=pointer]
+      - generic [ref=e35]:
+        - generic [ref=e36]: Free instant demo
+        - generic [ref=e37]: No signup required
+        - generic [ref=e38]: No call required
+        - generic [ref=e39]: 3D case review software
+        - generic [ref=e40]: No local software installs
+        - generic [ref=e41]: Annotations and measurements
+        - generic [ref=e42]: Case sharing links
+        - generic [ref=e43]: Exportable review reports
+        - generic [ref=e44]: Optional paid custom pilot
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - img [ref=e47]
+          - generic [ref=e50]: Launch one validated 3D review workflow in 7 days
+        - generic [ref=e51]:
+          - img [ref=e52]
+          - generic [ref=e55]: Shorten time from model upload to team review
+        - generic [ref=e56]:
+          - img [ref=e57]
+          - generic [ref=e60]: Share findings without local software installs
+        - generic [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e65]: Expand only after measurable pilot outcomes
+    - generic [ref=e66]:
+      - generic [ref=e71]: www.medviz3d.com / private review portal
+      - img "MedViz editor showing a mandible review workflow" [ref=e74]
+      - generic [ref=e75]:
+        - img [ref=e76]
+        - generic [ref=e79]:
+          - strong [ref=e80]: Free instant access
+          - generic [ref=e81]: Open demo cases now without signup
+      - generic [ref=e82]:
+        - img [ref=e83]
+        - generic [ref=e86]:
+          - strong [ref=e87]: Fast to evaluate
+          - generic [ref=e88]: Measure, annotate, share, and export in minutes
+  - generic [ref=e90]:
+    - generic [ref=e91]:
+      - paragraph [ref=e92]: Why Teams Buy MedViz
+      - heading "Try first for free, then pay only if you need custom rollout support." [level=2] [ref=e93]
+    - paragraph [ref=e94]: Teams can self-test with instant sample cases before any sales call. Guided pilots remain available for organizations that want custom setup and onboarding.
+  - generic [ref=e96]:
+    - paragraph [ref=e97]: Workflow Video
+    - heading "See the full MedViz workflow in under 90 seconds" [level=2] [ref=e98]
+    - paragraph [ref=e99]: This walkthrough shows instant demo loading, measurement, annotation, share-link flow, team comment simulation, and report export.
+    - generic [ref=e101]: Your browser does not support the video tag.
+    - generic [ref=e102]:
+      - button "Try MedViz Free Now - No Signup, No Call Needed" [ref=e103] [cursor=pointer]
+      - button "Need custom setup? Send details by email" [ref=e104] [cursor=pointer]
+  - generic [ref=e106]:
+    - paragraph [ref=e107]: Offer
+    - heading "Optional guided pilot if you want custom setup" [level=2] [ref=e108]
+    - paragraph [ref=e109]: Use free demo mode first. If your team wants implementation support, choose a guided pilot.
+    - generic [ref=e110]:
+      - generic [ref=e111]:
+        - img [ref=e113]
+        - heading "7-day pilot launch" [level=3] [ref=e117]
+        - paragraph [ref=e118]: Go live on one de-identified case quickly without waiting for a heavy software rollout.
+      - generic [ref=e119]:
+        - img [ref=e121]
+        - heading "Measured review workflow" [level=3] [ref=e123]
+        - paragraph [ref=e124]: Review anatomy with measurements, annotations, slices, saved views, and exportable findings in one browser flow.
+      - generic [ref=e125]:
+        - img [ref=e127]
+        - heading "Private deployment" [level=3] [ref=e129]
+        - paragraph [ref=e130]: Run a controlled pilot environment aligned to your current oral surgery and implant case-review workflow.
+      - generic [ref=e131]:
+        - img [ref=e133]
+        - heading "Report-ready outputs" [level=3] [ref=e136]
+        - paragraph [ref=e137]: Capture screenshots, notes, and measurements in a format collaborators can review and approve quickly.
+  - generic [ref=e139]:
+    - paragraph [ref=e140]: Who It Is For
+    - heading "Who MedViz fits best" [level=2] [ref=e141]
+    - paragraph [ref=e142]: MedViz fits teams that regularly review complex 3D cases and need a clearer way to coordinate planning, findings, and follow-up.
+    - generic [ref=e143]:
+      - generic [ref=e144]:
+        - img [ref=e146]
+        - heading "Oral and maxillofacial surgery clinics" [level=3] [ref=e148]
+        - paragraph [ref=e149]: For teams that need a clearer way to review anatomy, align plans, and present complex 3D cases.
+      - generic [ref=e150]:
+        - img [ref=e152]
+        - heading "Dental implant and surgical centers" [level=3] [ref=e156]
+        - paragraph [ref=e157]: For practices managing implant, jaw, TMJ, trauma, and craniofacial workflows across multiple stakeholders.
+      - generic [ref=e158]:
+        - img [ref=e160]
+        - heading "Training programs" [level=3] [ref=e165]
+        - paragraph [ref=e166]: For departments that want reusable browser-based teaching and 3D case presentation workflows for residents or fellows.
+      - generic [ref=e167]:
+        - img [ref=e169]
+        - heading "Labs and collaborators" [level=3] [ref=e171]
+        - paragraph [ref=e172]: For teams exchanging models with surgeons and needing a cleaner handoff than email attachments and static screenshots.
+  - generic [ref=e174]:
+    - paragraph [ref=e175]: Pilot Flow
+    - heading "How the 7-day pilot sprint works" [level=2] [ref=e176]
+    - paragraph [ref=e177]: Keep rollout focused and measurable so your team can decide quickly.
+    - generic [ref=e178]:
+      - generic [ref=e179]:
+        - generic [ref=e180]: "01"
+        - heading "Share one workflow need" [level=4] [ref=e181]
+        - paragraph [ref=e182]: Tell us the bottleneck by email and get an async setup recommendation.
+      - generic [ref=e183]:
+        - generic [ref=e184]: "02"
+        - heading "Run one de-identified case" [level=4] [ref=e185]
+        - paragraph [ref=e186]: We configure MedViz around one real workflow so your team can validate fit in practice.
+      - generic [ref=e187]:
+        - generic [ref=e188]: "03"
+        - heading "Launch private workspace" [level=4] [ref=e189]
+        - paragraph [ref=e190]: Your team gets a working portal with secure review links, measurements, comments, and exports.
+      - generic [ref=e191]:
+        - generic [ref=e192]: "04"
+        - heading "Decide next step" [level=4] [ref=e193]
+        - paragraph [ref=e194]: Review outcomes and choose to continue support, expand users, or request custom workflow features.
+  - generic [ref=e196]:
+    - img [ref=e197]
+    - paragraph [ref=e200]: MedViz supports orientation confirmation, unit confirmation, annotations, sharing, and report export so your team can trust early pilot decisions.
+  - generic [ref=e202]:
+    - paragraph [ref=e203]: Pricing
+    - heading "Choose your pilot scope" [level=2] [ref=e204]
+    - paragraph [ref=e205]: Most teams start with Pilot Sprint, prove fit on one high-value case workflow, then expand.
+    - generic [ref=e206]:
+      - generic [ref=e207]:
+        - generic [ref=e208]:
+          - paragraph [ref=e209]: Pilot Sprint
+          - generic [ref=e211]: 7-day launch sprint
+          - paragraph [ref=e212]: Pricing shared on request
+        - paragraph [ref=e213]: Best for one team that needs a fast proof of workflow fit this month.
+        - list [ref=e214]:
+          - listitem [ref=e215]:
+            - img [ref=e216]
+            - generic [ref=e219]: 1 private workspace
+          - listitem [ref=e220]:
+            - img [ref=e221]
+            - generic [ref=e224]: up to 5 users
+          - listitem [ref=e225]:
+            - img [ref=e226]
+            - generic [ref=e229]: guided setup on one de-identified case
+          - listitem [ref=e230]:
+            - img [ref=e231]
+            - generic [ref=e234]: measurements, annotations, slices, sharing, and report export
+        - button "Request Pilot Sprint" [ref=e235] [cursor=pointer]
+      - generic [ref=e236]:
+        - generic [ref=e237]:
+          - paragraph [ref=e238]: Clinic Rollout
+          - generic [ref=e240]: one-time rollout setup
+          - paragraph [ref=e241]: Pricing shared on request
+        - paragraph [ref=e242]: For clinics that want a more repeatable review workflow across a broader team.
+        - list [ref=e243]:
+          - listitem [ref=e244]:
+            - img [ref=e245]
+            - generic [ref=e248]: private portal and branded review experience
+          - listitem [ref=e249]:
+            - img [ref=e250]
+            - generic [ref=e253]: up to 15 users
+          - listitem [ref=e254]:
+            - img [ref=e255]
+            - generic [ref=e258]: workflow tuning and async onboarding support
+          - listitem [ref=e259]:
+            - img [ref=e260]
+            - generic [ref=e263]: priority support during rollout
+        - button "Request Clinic Rollout" [ref=e264] [cursor=pointer]
+      - generic [ref=e265]:
+        - generic [ref=e266]:
+          - paragraph [ref=e267]: Custom Workflow
+          - generic [ref=e269]: custom scope
+          - paragraph [ref=e270]: Pricing shared on request
+        - paragraph [ref=e271]: For organizations that need deeper integrations, custom tooling, or white-label deployment.
+        - list [ref=e272]:
+          - listitem [ref=e273]:
+            - img [ref=e274]
+            - generic [ref=e277]: custom reporting or white-labeling
+          - listitem [ref=e278]:
+            - img [ref=e279]
+            - generic [ref=e282]: specialized review tools or workflow tailoring
+          - listitem [ref=e283]:
+            - img [ref=e284]
+            - generic [ref=e287]: deeper onboarding and support
+          - listitem [ref=e288]:
+            - img [ref=e289]
+            - generic [ref=e292]: scoped feature work on top of MedViz
+        - button "Request Custom Workflow" [ref=e293] [cursor=pointer]
+  - generic [ref=e295]:
+    - paragraph [ref=e296]: See It In Use
+    - heading "See the review workflow before you commit" [level=2] [ref=e297]
+    - paragraph [ref=e298]: You do not have to imagine the workflow from scratch. You can see the product, review the interface, and evaluate fit before starting a pilot.
+  - generic [ref=e318]:
+    - generic [ref=e319]:
+      - paragraph [ref=e320]: Need Something More Custom?
+      - heading "Clinics use MedViz as a core platform, then tailor it to match local workflow." [level=2] [ref=e321]
+      - paragraph [ref=e322]: Common customizations include branded portals, tailored reporting, specialty review controls, onboarding support, and workflow tuning around how teams actually review cases.
+    - generic [ref=e323]:
+      - generic [ref=e324]:
+        - img [ref=e325]
+        - generic [ref=e327]: Private branded review portals
+      - generic [ref=e328]:
+        - img [ref=e329]
+        - generic [ref=e331]: Workflow tuning for surgeons, coordinators, and labs
+      - generic [ref=e332]:
+        - img [ref=e333]
+        - generic [ref=e335]: Case presentation and reporting support
+      - generic [ref=e336]:
+        - img [ref=e337]
+        - generic [ref=e339]: Custom feature work on top of the MedViz core
+  - generic [ref=e341]:
+    - generic [ref=e342]:
+      - heading "Start testing in minutes, not weeks" [level=2] [ref=e343]
+      - paragraph [ref=e344]: Open free demo mode now with sample cases. If your team wants custom implementation, email your workflow and get an async setup plan.
+    - generic [ref=e345]:
+      - button "Try MedViz Free Now" [ref=e346] [cursor=pointer]
+      - button "Email Custom Setup Request" [ref=e347] [cursor=pointer]
+  - generic [ref=e350]:
+    - paragraph [ref=e351]: Contact
+    - heading "Send your workflow and get setup guidance" [level=2] [ref=e352]
+    - paragraph [ref=e353]: Use the form below to share your current workflow and receive async setup recommendations.
+    - generic [ref=e354]:
+      - button "Request Setup by Email" [ref=e355] [cursor=pointer]:
+        - img [ref=e356]
+        - text: Request Setup by Email
+      - button "Review product screenshots" [ref=e359] [cursor=pointer]:
+        - img [ref=e360]
+        - text: Review product screenshots
+    - generic [ref=e363]:
+      - heading "Business Profile and Refund Policy" [level=3] [ref=e364]
+      - paragraph [ref=e365]: View account purpose, business description, support contact, refund terms, and social/business links on the dedicated policy page.
+      - generic [ref=e366]:
+        - button "Open Policy Page" [ref=e367] [cursor=pointer]
+        - 'link "Support: hello@medviz3d.com" [ref=e368] [cursor=pointer]':
+          - /url: mailto:hello@medviz3d.com
+        - 'link "Phone: +2348145803309" [ref=e369] [cursor=pointer]':
+          - /url: tel:+2348145803309
+    - iframe [ref=e371]:
+      
+  - contentinfo [ref=e372]:
+    - generic [ref=e373]:
+      - img "MedViz logo" [ref=e374]
+      - generic [ref=e375]: MedViz
+    - generic [ref=e376]:
+      - paragraph [ref=e377]: (c) 2026 MedViz. Private 3D case review pilots for clinical teams.
+      - paragraph [ref=e378]: Powered by PMC Projects Mastery Connect.
+    - list [ref=e379]:
+      - listitem [ref=e380]:
+        - button "Free Demo" [ref=e381] [cursor=pointer]
+      - listitem [ref=e382]:
+        - button "Offer" [ref=e383] [cursor=pointer]
+      - listitem [ref=e384]:
+        - button "Pricing" [ref=e385] [cursor=pointer]
+      - listitem [ref=e386]:
+        - button "Contact" [ref=e387] [cursor=pointer]
+      - listitem [ref=e388]:
+        - button "Policy" [ref=e389] [cursor=pointer]

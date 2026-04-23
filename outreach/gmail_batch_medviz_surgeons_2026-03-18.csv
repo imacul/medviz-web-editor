@@ -1,0 +1,71 @@
+email,subject,body,cc,bcc,reply_to
+jbrook27@uthsc.edu,Quick feedback on a 3D maxillofacial case review tool?,"Hi Dr. Brooks,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because you lead Oral and Maxillofacial Surgery at UTHSC, and I thought you might have a strong view on whether this kind of workflow is actually useful in practice.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, confusing, or unnecessary.
+
+Thanks,
+Emmanuel",,,
+bwilso85@uthsc.edu,Would you test a browser-based 3D OMFS review workflow?,"Hi Dr. Wilson,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I thought of you because you're Program Director in Oral and Maxillofacial Surgery at UTHSC, and I wanted feedback from someone who sees both surgical workflow and training gaps up close.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels clinically useful, what slows them down, and what should be removed.
+
+Thanks,
+Emmanuel",,,
+sashabra@uthsc.edu,Could I get blunt feedback on an early 3D case review tool?,"Hi Dr. Ashabranner,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because you're on the OMFS faculty at UTHSC, and I wanted feedback from a surgeon who is likely closer to day-to-day case review rather than only the administrative side.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels practical, what feels off, and what would stop them from using it.
+
+Thanks,
+Emmanuel",,,
+dale.baur@case.edu,Quick input on a 3D maxillofacial review workflow?,"Hi Dr. Baur,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because your Case profile highlights both your chair role and your work in head and neck tumor and reconstructive surgery, which made you seem like a strong fit for honest feedback on whether the workflow is clinically relevant.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, what is missing, and what would not survive real use.
+
+Thanks,
+Emmanuel",,,
+readfuller@tamu.edu,Would you be open to testing an early 3D OMFS review tool?,"Hi Dr. Read-Fuller,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because the Texas A&M OMS program page describes a strong orthognathic, reconstructive, implant, and craniofacial case mix, and I thought you might have a sharp sense of whether this sort of tool would help or get in the way.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, what feels risky, and what is still missing.
+
+Thanks,
+Emmanuel",,,

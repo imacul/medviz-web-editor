@@ -1,0 +1,17 @@
+[    4325ms] [ERROR] Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s fetchPriority fetchpriority 
+    at img
+    at div
+    at ProgressiveImage (http://127.0.0.1:4173/src/LandingPage.jsx?t=1774929265132:204:3)
+    at div
+    at div
+    at section
+    at div
+    at LandingPage (http://127.0.0.1:4173/src/LandingPage.jsx?t=1774929265132:305:3)
+    at LandingPageRoute (http://127.0.0.1:4173/src/pages/LandingPageRoute.tsx?t=1774929265132:46:20)
+    at RenderedRoute (http://127.0.0.1:4173/node_modules/.vite/deps/react-router.js?v=82076710:6353:26)
+    at Routes (http://127.0.0.1:4173/node_modules/.vite/deps/react-router.js?v=82076710:7220:3)
+    at Suspense
+    at App (http://127.0.0.1:4173/src/App.tsx?t=1774929265132:53:3)
+    at Router (http://127.0.0.1:4173/node_modules/.vite/deps/react-router.js?v=82076710:7150:13)
+    at BrowserRouter (http://127.0.0.1:4173/node_modules/.vite/deps/react-router.js?v=82076710:10361:3)
+    at AuthProvider (http://127.0.0.1:4173/src/features/auth/AuthProvider.tsx:21:32) @ http://127.0.0.1:4173/node_modules/.vite/deps/chunk-TYILIMWK.js?v=82076710:520

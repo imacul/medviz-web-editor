@@ -1,0 +1,58 @@
+- generic [ref=e3]:
+  - complementary:
+    - generic:
+      - button "Dismiss free demo message":
+        - img
+      - paragraph: Free Demo Mode
+      - heading "Try MedViz now. No signup required." [level=1]
+      - paragraph: Import your own de-identified STL, OBJ, or PLY model and start reviewing immediately. Rotate, zoom, measure, annotate, export PDF, and simulate team collaboration in one browser session.
+    - generic:
+      - paragraph: Save the Outcome
+      - heading "Create access when you want to keep the review moving" [level=2]
+      - paragraph: The free demo proves the workflow. Create access when you want to save your case, reopen it later, and give your team a single place to review the same findings.
+      - generic:
+        - generic:
+          - img
+          - generic: Save imported models and return without starting over
+        - generic:
+          - img
+          - generic: Keep measurements, comments, and exports tied to the same case
+        - generic:
+          - img
+          - generic: Move from one useful review to a repeatable team workflow
+      - generic:
+        - button "Create access to save this workflow":
+          - text: Create access to save this workflow
+          - img
+        - button "Sign in to continue"
+    - generic:
+      - heading "Shareable Case Link (Simulated)" [level=2]
+      - generic:
+        - textbox "Shareable demo link": http://127.0.0.1:4173/demo
+        - button "Copy Link":
+          - img
+          - text: Copy Link
+    - generic:
+      - heading "Team Comments (Simulated)" [level=2]
+      - list:
+        - listitem:
+          - generic:
+            - strong: Team Reviewer
+            - generic: 09:00
+          - paragraph: Use this panel to simulate collaboration notes while reviewing your own de-identified model.
+      - generic:
+        - textbox "Comment author":
+          - /placeholder: Reviewer name
+          - text: Reviewer
+        - textbox "Comment text":
+          - /placeholder: Add a simulated team comment...
+        - button "Add Comment":
+          - img
+          - text: Add Comment
+    - generic:
+      - generic:
+        - generic:
+          - heading "Guided Editor Tour" [level=2]
+          - paragraph: Launch a step-by-step walkthrough that opens the right panel for import, navigation, measuring, annotations, sharing, comments, and export.
+        - button "Start Tour"
+      - generic: The same guided tour is also available from the editor top bar for authenticated users.

@@ -1,0 +1,20 @@
+Hi Emmanuel,
+
+Updated outreach is ready for your review and approval.
+
+What changed:
+- Re-researched each buyer lead beyond the old sheet.
+- Added source-backed rationale per lead.
+- Added deliverability baseline notes (MX/domain checks + caveats).
+
+Files:
+1) Researched outreach batch (send-ready):
+C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_batch_medviz_pilot_sprint_researched_2026-03-21.csv
+
+2) Lead research pack (sources + confidence):
+C:\Users\HP\Documents\medviz_web_editor\outreach\medviz_buyer_leads_research_pack_2026-03-21.md
+
+Please reply "approved" if you want me to send this researched batch.
+
+Best,
+Codex

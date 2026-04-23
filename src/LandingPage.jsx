@@ -294,6 +294,7 @@ export default function LandingPage({
   isAuthenticated = false,
 }) {
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [heroPromptVisible, setHeroPromptVisible] = useState(false);
   const currentYear = new Date().getFullYear();
   const headerActions = isAuthenticated
     ? [
@@ -320,6 +321,16 @@ export default function LandingPage({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setHeroPromptVisible(true);
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
   }, []);
 
   return (
@@ -734,6 +745,91 @@ export default function LandingPage({
           <img src={lightboxSrc} alt="Screenshot preview" decoding="async" fetchPriority="high" />
         </div>
       )}
+
+      {heroPromptVisible ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: '0',
+            zIndex: 150,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <div
+            style={{
+              position: 'fixed',
+              right: '24px',
+              bottom: '24px',
+              width: 'min(420px, calc(100vw - 32px))',
+              padding: '18px',
+              borderRadius: '24px',
+              border: '1px solid rgba(126, 240, 188, 0.16)',
+              background: 'linear-gradient(160deg, rgba(9,22,39,0.96), rgba(15,39,69,0.94))',
+              boxShadow: '0 24px 70px rgba(3,10,18,0.42)',
+              backdropFilter: 'blur(14px)',
+              zIndex: 151,
+              color: '#f5fbff',
+            }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.26em', textTransform: 'uppercase', color: '#7ef0bc' }}>
+                Fast Check
+              </div>
+              <div style={{ marginTop: '8px', fontSize: '28px', fontWeight: 800, lineHeight: 1.1 }}>
+                Want to test the live case or tell us what feels missing?
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHeroPromptVisible(false)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.66)',
+                fontSize: '22px',
+                lineHeight: 1,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+              aria-label="Close prompt"
+            >
+              ×
+            </button>
+          </div>
+
+          <p style={{ marginTop: '12px', fontSize: '14px', lineHeight: 1.6, color: 'rgba(255,255,255,0.72)' }}>
+            Open the demo case now, or send quick feedback on what you expected to see, what feels valuable, or what still looks wrong.
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+            <button
+              className="lp__btn lp__btn--free"
+              onClick={() => {
+                setHeroPromptVisible(false);
+                openFreeDemo('landing_prompt_demo');
+              }}
+            >
+              Open Demo Case
+              <FiArrowRight size={16} />
+            </button>
+            <button
+              className="lp__btn lp__btn--outline"
+              onClick={() => {
+                setHeroPromptVisible(false);
+                trackEvent('cta_click', { target: 'feedback', source: 'landing_prompt' });
+                scrollToSection('feedback');
+              }}
+            >
+              Share Quick Feedback
+            </button>
+          </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

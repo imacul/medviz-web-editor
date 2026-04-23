@@ -75,6 +75,7 @@ const Medical3DCanvasView = Medical3DCanvas as ComponentType<{
   onGoHome: () => void;
   onInitialModelStateChange?: (state: InitialModelState) => void;
   onImportedModelPersist?: (file: File) => Promise<void>;
+  startTourSignal?: number;
   readOnly?: boolean;
   emptyState?: {
     title: string;
@@ -104,6 +105,7 @@ export default function EditorPage() {
   const requestedDrawer = searchParams.get('drawer');
   const [caseRecord, setCaseRecord] = useState<ClinicalCase | null>(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
+  const [canSaveCaseState, setCanSaveCaseState] = useState(false);
   const [initialModelSource, setInitialModelSource] = useState<ModelSource>(null);
   const [externalEditorState, setExternalEditorState] = useState<EditorState | null>(null);
   const lastSavedStateRef = useRef<EditorState | null>(null);
@@ -111,10 +113,20 @@ export default function EditorPage() {
   const [saveState, setSaveState] = useState<EditorOverlayState | null>(null);
   const [editorSaveBadgeState, setEditorSaveBadgeState] = useState<EditorSaveBadgeState | null>(null);
   const [importSignupPrompt, setImportSignupPrompt] = useState<ImportSignupPromptState | null>(null);
+  const [tourPromptVisible, setTourPromptVisible] = useState(false);
+  const [startTourSignal, setStartTourSignal] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeModelLabel, setActiveModelLabel] = useState<string | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<'share' | 'comments' | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const tourPromptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTourPromptTimer = useCallback(() => {
+    if (tourPromptTimerRef.current) {
+      clearTimeout(tourPromptTimerRef.current);
+      tourPromptTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (isLoading) {
@@ -127,7 +139,7 @@ export default function EditorPage() {
         { replace: true }
       );
     }
-  }, [caseId, isLoading, navigate, shareToken, userId]);
+  }, [caseId, clearTourPromptTimer, isLoading, navigate, shareToken, userId]);
 
   useEffect(() => {
     document.body.classList.add('editor-mode');
@@ -135,6 +147,8 @@ export default function EditorPage() {
       document.body.classList.remove('editor-mode');
     };
   }, []);
+
+  useEffect(() => () => clearTourPromptTimer(), [clearTourPromptTimer]);
 
   useEffect(() => {
     let isMounted = true;
@@ -145,10 +159,13 @@ export default function EditorPage() {
       setInitialModelSource(null);
       setCaseRecord(null);
       setIsViewOnly(false);
+      setCanSaveCaseState(false);
       setOverlayState(null);
       setSaveState(null);
       setEditorSaveBadgeState(null);
       setImportSignupPrompt(null);
+      setTourPromptVisible(false);
+      clearTourPromptTimer();
       setErrorMessage(null);
       setActiveModelLabel(null);
       return () => {
@@ -162,6 +179,8 @@ export default function EditorPage() {
       setInitialModelSource(null);
       setOverlayState(null);
       setImportSignupPrompt(null);
+      setTourPromptVisible(false);
+      clearTourPromptTimer();
 
       try {
         if (!shareToken && caseId && !isLocalCaseId(caseId)) {
@@ -186,7 +205,10 @@ export default function EditorPage() {
 
           const record = toLocalClinicalCase(localRecord);
           lastSavedStateRef.current = record.editor_state ?? null;
-          if (isMounted) setCaseRecord(record);
+          if (isMounted) {
+            setCaseRecord(record);
+            setCanSaveCaseState(false);
+          }
 
           if (!localRecord.modelFileName) return; // no model yet — open empty editor
 
@@ -232,14 +254,15 @@ export default function EditorPage() {
             throw new Error('Shared case not found or no longer available.');
           }
 
-          let sharedViewOnly = !userId;
+          let sharedViewOnly = false;
+          let sharedCanSaveState = false;
           if (userId) {
             const isOwner = sharedRecord.created_by === userId;
             if (!isOwner) {
               const role = await getMyRoleInCase(sharedRecord.id);
-              sharedViewOnly = role !== 'editor';
+              sharedCanSaveState = role === 'editor';
             } else {
-              sharedViewOnly = false;
+              sharedCanSaveState = true;
             }
           }
 
@@ -247,6 +270,7 @@ export default function EditorPage() {
             lastSavedStateRef.current = sharedRecord.editor_state ?? null;
             setCaseRecord(sharedRecord);
             setIsViewOnly(sharedViewOnly);
+            setCanSaveCaseState(sharedCanSaveState);
           }
 
           const editorModelUrl = sharedRecord.optimized_model_url || sharedRecord.model_url;
@@ -351,6 +375,7 @@ export default function EditorPage() {
           lastSavedStateRef.current = record.editor_state ?? null;
           setCaseRecord(record);
           setIsViewOnly(viewOnly);
+          setCanSaveCaseState(!viewOnly);
         }
 
         const editorModelUrl = record.optimized_model_url || record.model_url;
@@ -450,6 +475,8 @@ export default function EditorPage() {
 
   const handleInitialModelStateChange = (state: InitialModelState) => {
     if (state === 'importing') {
+      clearTourPromptTimer();
+      setTourPromptVisible(false);
       setOverlayState((current) => {
         if (!current) {
           return {
@@ -475,10 +502,19 @@ export default function EditorPage() {
     if (state === 'ready') {
       setOverlayState(null);
       setErrorMessage(null);
+      if (shareToken) {
+        clearTourPromptTimer();
+        tourPromptTimerRef.current = window.setTimeout(() => {
+          setTourPromptVisible(true);
+          tourPromptTimerRef.current = null;
+        }, 2200);
+      }
       return;
     }
 
     if (state === 'error') {
+      clearTourPromptTimer();
+      setTourPromptVisible(false);
       setOverlayState(null);
       setErrorMessage('The patient model could not be loaded into 3D review.');
     }
@@ -498,7 +534,7 @@ export default function EditorPage() {
 
   const flushEditorStateToDatabase = useCallback(
     (reason: 'debounce' | 'visibility' | 'unmount' = 'debounce'): Promise<void> => {
-      if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
+      if (!caseRecord || isLocalCaseId(caseRecord.id) || !canSaveCaseState) {
         return Promise.resolve();
       }
 
@@ -550,11 +586,11 @@ export default function EditorPage() {
       activeSaveRequestRef.current = savePromise;
       return savePromise;
     },
-    [caseRecord, clearEditorSaveBadgeTimer, isViewOnly]
+    [canSaveCaseState, caseRecord, clearEditorSaveBadgeTimer]
   );
 
   const handleEditorStateChange = useCallback((state: EditorState) => {
-    if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) return;
+    if (!caseRecord || isLocalCaseId(caseRecord.id) || !canSaveCaseState) return;
     const nextSignature = getEditorStateSignature(state);
     const lastSavedSignature = getEditorStateSignature(lastSavedStateRef.current);
     const pendingSignature = getEditorStateSignature(pendingEditorStateRef.current);
@@ -572,10 +608,10 @@ export default function EditorPage() {
     editorStateSaveTimer.current = setTimeout(() => {
       void flushEditorStateToDatabase('debounce');
     }, EDITOR_STATE_SAVE_DEBOUNCE_MS);
-  }, [caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase, isViewOnly]);
+  }, [canSaveCaseState, caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase]);
 
   useEffect(() => {
-    if (!caseRecord || isLocalCaseId(caseRecord.id) || isViewOnly) {
+    if (!caseRecord || isLocalCaseId(caseRecord.id) || !canSaveCaseState) {
       setEditorSaveBadgeState(null);
       clearEditorSaveBadgeTimer();
       return;
@@ -606,7 +642,7 @@ export default function EditorPage() {
       document.removeEventListener('visibilitychange', flushOnHidden);
       window.removeEventListener('pagehide', flushOnPageHide);
     };
-  }, [caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase, isViewOnly]);
+  }, [canSaveCaseState, caseRecord, clearEditorSaveBadgeTimer, flushEditorStateToDatabase]);
 
   useEffect(() => () => {
     if (editorStateSaveTimer.current) {
@@ -784,14 +820,7 @@ export default function EditorPage() {
     ? `${window.location.origin}/share/${caseRecord.share_token}`
     : null;
   const isPublicCase = caseRecord?.visibility === 'public';
-  const requiresTeamSignup = Boolean(shareToken && !userId);
-  const teamPromptMode =
-    requiresTeamSignup && (activeDrawer === 'share' || activeDrawer === 'comments')
-      ? activeDrawer
-      : null;
-  const shareDrawerRedirectTo = shareToken
-    ? `/editor?shareToken=${encodeURIComponent(shareToken)}&drawer=share`
-    : '/dashboard';
+  const requiresCommentSignup = Boolean(shareToken && !userId);
   const commentsDrawerRedirectTo = shareToken
     ? `/editor?shareToken=${encodeURIComponent(shareToken)}&drawer=comments`
     : '/dashboard';
@@ -800,6 +829,8 @@ export default function EditorPage() {
     return query ? `/editor?${query}` : '/editor';
   })();
   const canPromptForImportSignup = Boolean(shareToken && !userId);
+  const canPersistCaseModel = Boolean(caseRecord && (isLocalCaseId(caseRecord.id) || canSaveCaseState));
+  const shouldShowSharedExploreBanner = Boolean(shareToken && !canSaveCaseState);
 
   useEffect(() => {
     if (!isCloudCase && activeDrawer) {
@@ -874,14 +905,15 @@ export default function EditorPage() {
       >
         <Medical3DCanvasView
           initialModelSource={initialModelSource}
+          startTourSignal={startTourSignal}
           onGoHome={() =>
             navigate(backToCasePath)
           }
           onInitialModelStateChange={handleInitialModelStateChange}
-          onImportedModelPersist={isViewOnly ? undefined : handleImportedModelPersist}
+          onImportedModelPersist={canPersistCaseModel ? handleImportedModelPersist : undefined}
           readOnly={isViewOnly}
           initialEditorState={caseRecord?.editor_state ?? null}
-          onEditorStateChange={isViewOnly ? undefined : handleEditorStateChange}
+          onEditorStateChange={canSaveCaseState ? handleEditorStateChange : undefined}
           externalEditorState={externalEditorState}
           showShareToggle={isCloudCase}
           sharePanelOpen={activeDrawer === 'share'}
@@ -889,7 +921,7 @@ export default function EditorPage() {
           showCommentsToggle={isCloudCase}
           commentsPanelOpen={activeDrawer === 'comments'}
           onToggleCommentsPanel={isCloudCase ? handleToggleCommentsDrawer : undefined}
-          editorSaveStatus={isCloudCase && !isViewOnly ? editorSaveBadgeState?.status ?? null : null}
+          editorSaveStatus={isCloudCase && canSaveCaseState ? editorSaveBadgeState?.status ?? null : null}
           onBlockedImportClick={canPromptForImportSignup ? handleBlockedImportClick : undefined}
           onNewCaseImportClick={userId ? handleNewCaseImportClick : undefined}
         />
@@ -905,78 +937,67 @@ export default function EditorPage() {
           >
             {activeDrawer === 'share' ? (
               <section className="flex h-full flex-col rounded-[24px] border border-medviz-line/60 bg-[rgba(9,22,39,0.82)] p-5 text-white">
-                {teamPromptMode === 'share' ? (
-                  <TeamFeatureSignupGate
-                    title="Create an account to share this case"
-                    description="Anonymous reviewers can explore the model, but sharing a case link is a team feature. Create an account or sign in to continue."
-                    loginTo={shareDrawerRedirectTo}
-                    signupTo={shareDrawerRedirectTo}
-                  />
-                ) : (
-                  <>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-medviz-accent">
-                      Shareable Case Link
-                    </p>
-                    <h2 className="mt-2 font-display text-2xl font-bold text-medviz-ink">
-                      {isPublicCase ? 'Copy secure review link' : 'Sharing is currently private'}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-white/68">
-                      {isPublicCase
-                        ? 'Share this link with teammates who should review this case.'
-                        : 'Make this case public from the case page to generate a shareable external link.'}
-                    </p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-medviz-accent">
+                  Shareable Case Link
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-bold text-medviz-ink">
+                  {isPublicCase ? 'Copy this same review link' : 'Sharing is currently private'}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  {isPublicCase
+                    ? 'Use this same link to reopen the shared case on another device or send it to someone else who should review it.'
+                    : 'Make this case public from the case page to generate a shareable external link.'}
+                </p>
 
-                    {isPublicCase && shareUrl ? (
-                      <div className="mt-5 rounded-2xl border border-medviz-line/60 bg-[rgba(7,17,31,0.86)] p-3">
-                        <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/48">
-                          Public Link
-                        </label>
-                        <div className="mt-2 flex gap-2">
-                          <input
-                            value={shareUrl}
-                            readOnly
-                            className="flex-1 rounded-xl border border-medviz-line/60 bg-[rgba(3,10,18,0.85)] px-3 py-2 text-xs text-medviz-ink"
-                            aria-label="Shareable case link"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => void handleCopyShareLink()}
-                            className="inline-flex items-center gap-2 rounded-xl border border-medviz-line/60 bg-[rgba(9,22,39,0.92)] px-3 py-2 text-xs font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
-                          >
-                            {shareLinkCopied ? (
-                              <>
-                                <FiCheck className="h-3.5 w-3.5 text-medviz-accent" />
-                                Copied
-                              </>
-                            ) : (
-                              <>
-                                <FiCopy className="h-3.5 w-3.5" />
-                                Copy
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Link
-                        to={backToCasePath}
-                        className="mt-5 inline-flex w-fit items-center gap-2 rounded-full border border-medviz-line bg-[rgba(9,22,39,0.9)] px-4 py-2 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+                {isPublicCase && shareUrl ? (
+                  <div className="mt-5 rounded-2xl border border-medviz-line/60 bg-[rgba(7,17,31,0.86)] p-3">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/48">
+                      Public Link
+                    </label>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        value={shareUrl}
+                        readOnly
+                        className="flex-1 rounded-xl border border-medviz-line/60 bg-[rgba(3,10,18,0.85)] px-3 py-2 text-xs text-medviz-ink"
+                        aria-label="Shareable case link"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyShareLink()}
+                        className="inline-flex items-center gap-2 rounded-xl border border-medviz-line/60 bg-[rgba(9,22,39,0.92)] px-3 py-2 text-xs font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
                       >
-                        Open Case Page
-                        <FiArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                      </Link>
-                    )}
-
-                    {isCaseOwner ? (
-                      <p className="mt-auto pt-4 text-xs text-white/52">
-                        Tip: owners can control visibility from the case page.
-                      </p>
-                    ) : null}
-                  </>
+                        {shareLinkCopied ? (
+                          <>
+                            <FiCheck className="h-3.5 w-3.5 text-medviz-accent" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <FiCopy className="h-3.5 w-3.5" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    to={backToCasePath}
+                    className="mt-5 inline-flex w-fit items-center gap-2 rounded-full border border-medviz-line bg-[rgba(9,22,39,0.9)] px-4 py-2 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+                  >
+                    Open Case Page
+                    <FiArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                  </Link>
                 )}
+
+                {isCaseOwner ? (
+                  <p className="mt-auto pt-4 text-xs text-white/52">
+                    Tip: owners can control visibility from the case page.
+                  </p>
+                ) : null}
               </section>
             ) : activeDrawer === 'comments' ? (
-              teamPromptMode === 'comments' ? (
+              requiresCommentSignup ? (
                 <TeamFeatureSignupGate
                   title="Create an account to join the comments"
                   description="Anonymous reviewers can inspect the shared case, but comments are reserved for signed-in team members."
@@ -1133,6 +1154,44 @@ export default function EditorPage() {
               You can keep inspecting this shared model without an account. Importing your own files
               is reserved for signed-in MedViz users.
             </p>
+          </div>
+        </div>
+      ) : null}
+
+      {tourPromptVisible ? (
+        <div className="absolute inset-0 z-127 flex items-center justify-center backdrop-blur-md px-4">
+          <div className="w-full max-w-md rounded-[28px] border border-medviz-line/80 bg-[linear-gradient(160deg,rgba(9,22,39,0.96),rgba(15,39,69,0.92))] px-6 py-6 text-white shadow-[0_26px_80px_rgba(3,10,18,0.52)] backdrop-blur">
+            <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-medviz-gold">
+              Guided Start
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold text-medviz-ink">
+              Explore on your own or take the tour
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              You can move around freely right away, or start the guided tour to see measurements,
+              annotations, slicing, sharing, and exports in context.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setTourPromptVisible(false)}
+                className="inline-flex items-center gap-2 rounded-full border border-medviz-line bg-[rgba(9,22,39,0.92)] px-5 py-3 text-sm font-semibold text-medviz-ink transition hover:border-medviz-accent hover:text-medviz-accent"
+              >
+                Explore Myself
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTourPromptVisible(false);
+                  setStartTourSignal((current) => current + 1);
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-medviz-accent px-5 py-3 text-sm font-semibold text-[#060f1a] transition hover:bg-[#7ad9ff] pulse-glow"
+              >
+                Start Tour
+                <FiArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

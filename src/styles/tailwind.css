@@ -38,3 +38,20 @@ input,
 textarea {
   font: inherit;
 }
+
+.pulse-glow {
+  animation: pulse-glow 2.2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(79, 174, 255, 0.45);
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 174, 255, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 18px 8px rgba(79, 174, 255, 0.18);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 174, 255, 0.0);
+  }
+}

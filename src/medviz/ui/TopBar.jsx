@@ -91,7 +91,7 @@ const TopBar = ({
         error: { label: 'Save failed', color: '#ff8f9f' }
       }[editorSaveStatus]
     : null;
-  const importBlockedBySignup = Boolean(readOnly && onBlockedImportClick);
+  const importBlockedBySignup = Boolean(onBlockedImportClick);
   const importStartsNewCase = Boolean(hasImportedModel && onNewCaseImportClick);
   const importActionAvailable =
     importBlockedBySignup || importStartsNewCase || (!readOnly && onImportClick);
@@ -231,6 +231,7 @@ const TopBar = ({
             data-tour-id="tour-button"
             style={getToolButtonStyle(tourOpen, palette)}
             type="button"
+            className="pulse-glow"
           >
             Tour
           </button>

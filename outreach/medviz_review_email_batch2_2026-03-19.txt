@@ -1,0 +1,56 @@
+Hi Emmanuel,
+
+Here is the current MedViz surgeon outreach batch for your review before anything is sent.
+
+Live app:
+https://medviz-web-editor.vercel.app/
+
+Campaign summary:
+- Goal: recruit another small batch of oral and maxillofacial surgeons to test MedViz and give blunt workflow feedback
+- Audience: academic / residency-leading OMFS surgeons with public professional emails
+- Batch size: 5
+- Channel: cold email
+- CTA: try the live app on a de-identified case or short demo and reply with honest feedback
+
+Proposed leads:
+1. Paul Tiwana, DDS, MD, MS - Paul-Tiwana@ouhsc.edu
+   Reason: Division Head and Chair at OUHSC with facial trauma, orthognathic, and cleft/craniofacial focus
+
+2. Michael Miloro, DMD, MD, FACS - mmiloro@uic.edu
+   Reason: Department Head at UIC with bone healing, implantology, distraction osteogenesis, and orthognathic interests
+
+3. Andrea Burke, DMD, MD - abburke@uw.edu
+   Reason: UW OMFS faculty with craniofacial and bone-related disease research fit
+
+4. Austin Gaal, DDS, MPH, FACS - agaal@uw.edu
+   Reason: UW OMFS faculty with trauma, orthognathic, and cleft/craniofacial practice
+
+5. Danielle L. Freburg-Hoffmeister, MD, DDS - dfreburg@ufl.edu
+   Reason: UF Program Director with oral surgery, implant, and TMJ focus
+
+Sample proposed outreach:
+
+Subject:
+Would you test a browser-based 3D OMFS review workflow?
+
+Body:
+Hi Dr. Tiwana,
+
+I'm Emmanuel, building MedViz, a browser-based 3D case review workflow for maxillofacial mesh review.
+
+I reached out because your OUHSC faculty profile highlights leadership across facial trauma, orthognathic surgery, and cleft/craniofacial work, which made you seem like a strong fit for blunt feedback on whether this type of review workflow is genuinely useful.
+
+The current version supports in-browser 3D review, measurements, annotations, slicing, orientation and unit confirmation, and exportable review reports.
+
+If you're open to it, here is the live app: https://medviz-web-editor.vercel.app/
+
+I'm looking for a few surgeons who can try it on a de-identified case or short demo and tell me what feels useful, what feels risky, and what would not survive real clinical use.
+
+Thanks,
+Emmanuel
+
+Files prepared locally:
+- C:\Users\HP\Documents\medviz_web_editor\outreach\medviz_surgeon_leads_batch2_2026-03-19.md
+- C:\Users\HP\Documents\medviz_web_editor\outreach\gmail_batch_medviz_surgeons_batch2_2026-03-19.csv
+
+No surgeon emails have been sent yet.
