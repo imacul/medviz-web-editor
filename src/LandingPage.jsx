@@ -31,7 +31,7 @@ import ss6 from '../screenshots/Screenshot 2026-03-19 192014 - optimized.jpg';
 import walkthroughVideo from '../assets/medviz3D.mp4';
 
 const TALLY_FORM_ID = 'LZdLDz';
-const CONTACT_EMAIL = 'hello@medviz3d.com';
+const CONTACT_EMAIL = 'support@medviz3d.com';
 const POLICY_PAGE_PATH = '/business-profile-refund-policy';
 const DEMO_PAGE_PATH = '/demo';
 

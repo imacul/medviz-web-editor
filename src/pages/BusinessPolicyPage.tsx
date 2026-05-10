@@ -4,7 +4,7 @@ import { FiCheckCircle, FiMail } from 'react-icons/fi';
 import SiteHeader from '../components/SiteHeader';
 import './BusinessPolicyPage.css';
 
-const CONTACT_EMAIL = 'hello@medviz3d.com';
+const CONTACT_EMAIL = 'support@medviz3d.com';
 const WEBSITE_URL = 'https://www.medviz3d.com';
 const FOUNDER_SOCIAL_URL = 'https://x.com/ImmaculRichie';
 const PMC_SOCIAL_URL = 'https://x.com/ProjMastery';
