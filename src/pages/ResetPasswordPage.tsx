@@ -17,12 +17,49 @@ export default function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [linkIssue, setLinkIssue] = useState<{ isExpired: boolean; description: string | null } | null>(null);
+  const [isRecoveryVerified, setIsRecoveryVerified] = useState(false);
 
   const redirectTo = useMemo(() => searchParams.get('redirectTo') || '/dashboard', [searchParams]);
 
   useEffect(() => {
     document.body.classList.remove('editor-mode');
     document.title = 'MedViz - Choose New Password';
+  }, []);
+
+  // Supabase redirects here with either a recovery token in the URL hash (exchanged
+  // automatically by detectSessionInUrl) or, for an expired/reused link, an error in the hash.
+  // This only reads the hash to drive UI state — it must not mutate window.location/history,
+  // since that would race with the Supabase client's own detectSessionInUrl handler, which
+  // needs the untouched hash to exchange a valid recovery token into a session. Supabase's
+  // client already cleans up the hash itself once it has finished processing it.
+  useEffect(() => {
+    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    const errorCode = hashParams.get('error_code');
+    const errorDescription = hashParams.get('error_description');
+
+    if (errorCode) {
+      setLinkIssue({
+        isExpired: errorCode === 'otp_expired',
+        description: errorDescription ? errorDescription.replace(/\+/g, ' ') : null,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const client = getSupabaseClient();
+
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryVerified(true);
+        setLinkIssue(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -78,19 +115,30 @@ export default function ResetPasswordPage() {
   }
 
   if (!user) {
+    const heading = linkIssue
+      ? linkIssue.isExpired
+        ? 'This link has expired'
+        : 'This link is no longer valid'
+      : 'Open the link from your email';
+    const description = linkIssue
+      ? 'Password reset links can only be used once and expire after a short time. Request a new one to continue.'
+      : 'Use the latest link from your email to choose a new password and return to your cases.';
+
     return (
       <div className="min-h-full bg-transparent px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl rounded-[34px] border border-medviz-line/80 bg-[rgba(15,39,69,0.9)] px-8 py-10 text-center text-medviz-ink shadow-[0_24px_70px_rgba(3,10,18,0.4)] backdrop-blur">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] border border-medviz-line bg-[rgba(9,22,39,0.9)]">
-            <img src={logoSvg} alt="MedViz logo" className="h-8 w-8 object-contain" />
+            {linkIssue ? (
+              <FiAlertCircle className="h-7 w-7 text-rose-300" />
+            ) : (
+              <img src={logoSvg} alt="MedViz logo" className="h-8 w-8 object-contain" />
+            )}
           </div>
           <p className="mt-6 font-display text-xs font-bold uppercase tracking-[0.4em] text-medviz-accent">
             Password Reset
           </p>
-          <h1 className="mt-4 font-display text-3xl font-bold text-medviz-ink">Open the link from your email</h1>
-          <p className="mt-3 text-sm leading-7 text-white/68">
-            Use the latest link from your email to choose a new password and return to your cases.
-          </p>
+          <h1 className="mt-4 font-display text-3xl font-bold text-medviz-ink">{heading}</h1>
+          <p className="mt-3 text-sm leading-7 text-white/68">{description}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={`/forgot-password?redirectTo=${encodeURIComponent(redirectTo)}`}
@@ -152,6 +200,12 @@ export default function ResetPasswordPage() {
               Password Help
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold text-medviz-ink">Save a new password</h2>
+            {isRecoveryVerified ? (
+              <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-emerald-400">
+                <FiCheckCircle className="h-3.5 w-3.5" />
+                Recovery link verified
+              </p>
+            ) : null}
           </div>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
