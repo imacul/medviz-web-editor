@@ -77,8 +77,10 @@ npm run dev
 
 ## License
 
-MedViz Web Editor's original source code is licensed under the **GNU Affero General Public License version 3.0 only (AGPL-3.0-only)**. See the full [LICENSE](./LICENSE).
+MedViz Web Editor's original source code is **source-available** under the [PolyForm Noncommercial License 1.0.0](./LICENSE) (SPDX: `PolyForm-Noncommercial-1.0.0`). It is **not an OSI-approved open-source license**, because the license limits permitted use to noncommercial purposes.
 
-Under this license, you may use, inspect, modify, and redistribute the covered source code, including commercially, subject to the license conditions. Distributing modified versions comes with source-code obligations. If you modify MedViz and let people use that modified version over a network, AGPL-3.0 section 13 requires you to offer those users access to its corresponding source code. Third-party dependencies and assets remain subject to their own licenses.
+You may inspect, use, modify, and redistribute the code for purposes permitted by the license, including personal learning, research, testing, and qualifying educational use. **Commercial use requires separate permission from the copyright holder.** If you want commercial licensing, contact the project owner through [MedViz 3D](https://medviz3d.com).
 
-**Free demo vs. optional paid services:** The [MedViz 3D demo](https://medviz3d.com/demo) is free to try. Optional paid Pilot Sprint, Clinic Rollout, and custom workflow services cover guided setup, onboarding, hosting, support, and customization. Those services are separate from the rights granted under the AGPL-3.0 source-code license.
+**Free demo vs. optional paid services:** The [MedViz 3D demo](https://medviz3d.com/demo) is free to try. Optional paid Pilot Sprint, Clinic Rollout, and custom workflow services cover guided setup, onboarding, hosting, support, and customization. Free access to the hosted demo does not itself grant commercial source-code rights.
+
+**Prior versions and third-party components:** This change does not revoke rights validly granted under earlier releases or licenses (including ISC and AGPL-3.0). Third-party dependencies and assets continue under their respective terms. Only code for which the project owner has adequate licensing rights can be offered under these terms.
