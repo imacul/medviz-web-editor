@@ -74,3 +74,11 @@ npm run dev
 ## Notes
 - Production build currently succeeds with Vite.
 - Bundle-size warning is expected because Three.js is loaded in main chunk.
+
+## License
+
+MedViz Web Editor's original source code is licensed under the **GNU Affero General Public License version 3.0 only (AGPL-3.0-only)**. See the full [LICENSE](./LICENSE).
+
+Under this license, you may use, inspect, modify, and redistribute the covered source code, including commercially, subject to the license conditions. Distributing modified versions comes with source-code obligations. If you modify MedViz and let people use that modified version over a network, AGPL-3.0 section 13 requires you to offer those users access to its corresponding source code. Third-party dependencies and assets remain subject to their own licenses.
+
+**Free demo vs. optional paid services:** The [MedViz 3D demo](https://medviz3d.com/demo) is free to try. Optional paid Pilot Sprint, Clinic Rollout, and custom workflow services cover guided setup, onboarding, hosting, support, and customization. Those services are separate from the rights granted under the AGPL-3.0 source-code license.
