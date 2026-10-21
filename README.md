@@ -30,11 +30,48 @@
   <a href="https://youtu.be/rCmx7AW-bBw">Watch Export Report Demo on YouTube</a>
 </p>
 
-## Run
+## Quick start (no Supabase required)
+
+Use **Node.js 20+** and a current version of npm.
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
+
+Open **http://localhost:5173/** and choose **Free Demo**, or go directly to **http://localhost:5173/demo?local=1**. A synthetic sample STL mesh is loaded automatically, so you can inspect, measure, annotate, slice, export, and import your own STL/OBJ/PLY models without any account, database, or environment variables.
+
+The local demo is **not a clinical case**: its bundled mesh is synthetic. It doesn't save cases to Supabase, share links, or provide cloud team comments. Imported files are handled in your browser, not uploaded to MedViz's hosted project.
+
+### Optional: cloud accounts and shared cases
+
+If you want to develop against your **own Supabase project**, create your local configuration file:
+
+```bash
+cp .env.example .env.local
+```
+
+On Windows Command Prompt you can use `copy .env.example .env.local` instead.
+
+In `.env.local`, set:
+
+```dotenv
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-or-publishable-key
+```
+
+Create/configure the database tables, storage buckets, and row-level-security policies required by cloud features in your own Supabase project. **Do not use the production MedViz credentials.** Never use Supabase service-role or other secret keys in any `VITE_` variable: Vite embeds these values in browser code. Restart `npm run dev` after changing the environment file.
+
+When Supabase is not configured, the landing page and local demo remain usable, and cloud-only routes show clear setup instructions rather than a blank screen. Even with Supabase configured, **/demo?local=1** always uses the self-contained demo, while **/demo** uses the hosted shared-case experience.
+
+### Checks
+
+```bash
+npm run typecheck
+npm run build
+```
+
+If you see a Vite React Babel deprecation warning, it is independent of the missing Supabase configuration and should not prevent the local demo from starting.
 
 ## Tech Stack
 - React (Vite)
