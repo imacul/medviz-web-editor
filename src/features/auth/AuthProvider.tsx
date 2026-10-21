@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 
-import { getSupabaseClient } from '../../lib/supabase/client';
+import { getSupabaseClient, hasSupabaseConfig } from '../../lib/supabase/client';
 
 interface AuthContextValue {
   isLoading: boolean;
@@ -17,26 +17,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const client = getSupabaseClient();
+    // Landing and local demo should work from a fresh clone with no .env.local.
+    // Cloud-backed routes display setup guidance until valid settings are provided.
+    if (!hasSupabaseConfig()) {
+      setSession(null);
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     let isMounted = true;
+    let client: ReturnType<typeof getSupabaseClient>;
+
+    try {
+      client = getSupabaseClient();
+    } catch (error) {
+      console.error('MedViz Supabase initialization failed:', error);
+      setIsLoading(false);
+      return;
+    }
 
     const bootstrap = async () => {
-      const { data, error } = await client.auth.getSession();
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (!isMounted) return;
 
-      if (!isMounted) {
-        return;
-      }
-
-      if (error) {
+        if (error) {
+          console.error('MedViz session restore failed:', error);
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(data.session);
+          setUser(data.session?.user ?? null);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('MedViz session restore failed:', error);
         setSession(null);
         setUser(null);
-        setIsLoading(false);
-        return;
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setIsLoading(false);
     };
 
     void bootstrap();
@@ -44,10 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isMounted) {
-        return;
-      }
-
+      if (!isMounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setIsLoading(false);
