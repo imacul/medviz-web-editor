@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { FiBox } from 'react-icons/fi';
+import { hasSupabaseConfig } from './lib/supabase/client';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { loadEditorPage } from './pages/preload';
@@ -18,11 +19,13 @@ const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticlePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
+const SetupRequiredPage = lazy(() => import('./pages/SetupRequiredPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const SharedCasePage = lazy(() => import('./pages/SharedCasePage'));
 
 export default function App() {
+  const cloudConfigured = hasSupabaseConfig();
   useEffect(() => {
     document.title = 'MedViz';
   }, []);
@@ -35,20 +38,20 @@ export default function App() {
         <Route path="/blog" element={<BlogIndexPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
         <Route path="/business-profile-refund-policy" element={<BusinessPolicyPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/share/:shareToken" element={<SharedCasePage />} />
+        <Route path="/login" element={cloudConfigured ? <LoginPage /> : <SetupRequiredPage />} />
+        <Route path="/signup" element={cloudConfigured ? <SignupPage /> : <SetupRequiredPage />} />
+        <Route path="/forgot-password" element={cloudConfigured ? <ForgotPasswordPage /> : <SetupRequiredPage />} />
+        <Route path="/reset-password" element={cloudConfigured ? <ResetPasswordPage /> : <SetupRequiredPage />} />
+        <Route path="/share/:shareToken" element={cloudConfigured ? <SharedCasePage /> : <SetupRequiredPage />} />
         <Route
           path="/editor"
-          element={
+          element={cloudConfigured ? (
             <Suspense fallback={<EditorRouteFallback />}>
               <EditorPage />
             </Suspense>
-          }
+          ) : <SetupRequiredPage />}
         />
-        <Route element={<ProtectedRoute />}>
+        <Route element={cloudConfigured ? <ProtectedRoute /> : <SetupRequiredPage />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/ops" element={<Navigate to="/dashboard" replace />} />
           <Route path="/cases/new" element={<CreateCasePage />} />
