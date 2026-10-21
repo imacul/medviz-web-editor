@@ -2,6 +2,10 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseClient: SupabaseClient | null = null;
 
+/** True when both browser-safe public Supabase settings are configured. */
+export const hasSupabaseConfig = (): boolean =>
+  Boolean(import.meta.env.VITE_SUPABASE_URL?.trim() && import.meta.env.VITE_SUPABASE_ANON_KEY?.trim());
+
 export const getSupabaseUrl = (): string => {
   const value = import.meta.env.VITE_SUPABASE_URL?.trim();
 
