@@ -12,11 +12,11 @@ const distDir = path.join(repoRoot, 'dist');
 
 const SITE_URL = 'https://www.medviz3d.com';
 const SITE_NAME = 'MedViz 3D';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/medviz-social-share.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/medviz-demo-editor-preview.jpg`;
 const BLOG_TITLE = 'MedViz Blog | Faster 3D Case Review for Oral Surgery and Implant Teams';
 const BLOG_DESCRIPTION =
   'Buyer-focused articles on browser-based 3D case review, implant planning workflow, and faster collaboration for oral surgery teams.';
-const DEFAULT_IMAGE_ALT = 'MedViz 3D case review software for oral surgery and implant teams';
+const DEFAULT_IMAGE_ALT = 'MedViz 3D free browser demo: interactive 3D model viewer and measurement tools';
 
 function escapeHtml(value) {
   return String(value)
@@ -84,8 +84,6 @@ function buildMetaTags({
     `<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />`,
     `<meta property="og:image" content="${escapeHtml(image)}" />`,
     `<meta property="og:image:secure_url" content="${escapeHtml(image)}" />`,
-    '<meta property="og:image:width" content="1200" />',
-    '<meta property="og:image:height" content="630" />',
     `<meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />`,
     '<meta name="twitter:card" content="summary_large_image" />',
     `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
@@ -549,6 +547,47 @@ async function writeStaticBlogPages(assets) {
   }
 }
 
+
+/**
+ * Give /demo its own crawlable Open Graph preview without changing the SPA.
+ * Telegram and other link scrapers do not execute client-side route metadata.
+ * The generated HTML includes the same built CSS/JS as the normal app shell.
+ */
+async function writeStaticDemoPage(assets) {
+  const title = 'MedViz 3D — Free 3D Model Viewer & Demo';
+  const description = 'Open STL, OBJ, and PLY models directly in your browser. Rotate, measure, annotate, slice, and export 3D models. Try MedViz free with no installation.';
+  const metadata = buildMetaTags({
+    title,
+    description,
+    canonicalUrl: getAbsoluteUrl('/demo'),
+    type: 'website',
+    image: DEFAULT_OG_IMAGE,
+    imageAlt: DEFAULT_IMAGE_ALT,
+  });
+
+  const appShell = await fs.readFile(path.join(distDir, 'index.html'), 'utf8');
+  const inlineStyle = appShell.match(/<style>[\\s\\S]*?<\\/style>/i)?.[0] ?? '';
+
+  const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+    ${metadata}
+    ${assets.iconTag}
+    ${assets.stylesheetTags}
+    ${assets.scriptTags}
+    ${inlineStyle}
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+
+  await writeHtmlFile(path.join(distDir, 'demo', 'index.html'), html);
+}
+
 async function writeSitemap() {
   const sitemapEntries = getSitemapEntries().map((entry) => ({
     ...entry,
@@ -584,6 +623,7 @@ async function writeIndexNowKeyFile() {
 async function main() {
   const assets = await readAppShellAssets();
   await writeStaticBlogPages(assets);
+  await writeStaticDemoPage(assets);
   await writeSitemap();
   await writeIndexNowKeyFile();
 }

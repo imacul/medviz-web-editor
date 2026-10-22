@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 export const SITE_URL = 'https://www.medviz3d.com';
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/medviz-social-share.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/medviz-demo-editor-preview.jpg`;
 const JSON_LD_SCRIPT_ID = 'medviz-jsonld';
 
 type MetaAttribute = 'name' | 'property';
@@ -66,7 +66,7 @@ export function usePageSeo({
   description,
   path,
   image = DEFAULT_OG_IMAGE,
-  imageAlt = 'MedViz 3D case review software for oral surgery and implant teams',
+  imageAlt = 'MedViz 3D free browser demo: interactive 3D model viewer and measurement tools',
   keywords,
   type = 'website',
   robots = 'index, follow, max-image-preview:large',
@@ -89,8 +89,6 @@ export function usePageSeo({
     upsertMeta('property', 'og:url', canonicalUrl);
     upsertMeta('property', 'og:image', image);
     upsertMeta('property', 'og:image:secure_url', image);
-    upsertMeta('property', 'og:image:width', '1200');
-    upsertMeta('property', 'og:image:height', '630');
     upsertMeta('property', 'og:image:alt', imageAlt);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', title);
