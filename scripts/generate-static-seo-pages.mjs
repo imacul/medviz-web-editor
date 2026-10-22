@@ -566,7 +566,11 @@ async function writeStaticDemoPage(assets) {
   });
 
   const appShell = await fs.readFile(path.join(distDir, 'index.html'), 'utf8');
-  const inlineStyle = appShell.match(/<style>[\\s\\S]*?<\\/style>/i)?.[0] ?? '';
+  const styleStart = appShell.indexOf('<style>');
+  const styleEnd = appShell.indexOf('</style>', styleStart);
+  const inlineStyle = styleStart >= 0 && styleEnd > styleStart
+    ? appShell.slice(styleStart, styleEnd + '</style>'.length)
+    : '';
 
   const html = `<!doctype html>
 <html lang="en">
